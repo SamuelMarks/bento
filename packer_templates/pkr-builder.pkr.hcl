@@ -176,9 +176,19 @@ build {
         "no_proxy=${var.no_proxy}"
       ]
     )
-    execute_command = var.os_name == "freebsd" ? "echo 'vagrant' | {{.Vars}} su -m root -c 'sh -eux {{.Path}}'" : (
-      var.os_name == "solaris" ? "echo 'vagrant'|sudo -S bash {{.Path}}" : "echo 'vagrant' | {{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
-    )
+    execute_command = var.ssh_username == "root" ? (
+      var.os_name == "freebsd" ? "{{.Vars}} sh -eux {{.Path}}" : (
+        var.os_name == "solaris" ? "bash {{.Path}}" : (
+          var.os_name == "alpine" ? "{{.Vars}} sh -c {{.Path}}" : "{{ .Vars }} sh -eux '{{ .Path }}'"
+          )
+        )
+      ) : (
+      var.os_name == "freebsd" ? "echo 'vagrant' | {{.Vars}} su -m root -c 'sh -eux {{.Path}}'" : (
+        var.os_name == "solaris" ? "echo 'vagrant'|sudo -S bash {{.Path}}" : (
+          var.os_name == "alpine" ? "echo 'vagrant'| {{.Vars}} su -m root -c 'sh -c {{.Path}}'" :"echo 'vagrant' | {{ .Vars }} sudo -S -E sh -eux '{{ .Path }}'"
+          )
+        )
+      )
     expect_disconnect = true
     scripts           = local.scripts
     except            = var.is_windows ? local.source_names : null

@@ -183,8 +183,18 @@ locals {
   output_directory = var.output_directory == null ? "${path.root}/../builds/build_files/packer-${var.os_name}-${var.os_version}-${var.os_arch}" : var.output_directory
   shutdown_command = var.shutdown_command == null ? (
     var.is_windows ? "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"" : (
-      var.os_name == "macos" ? "echo 'vagrant' | sudo -S shutdown -h now" : (
-        var.os_name == "freebsd" ? "echo 'vagrant' | su -m root -c 'shutdown -p now'" : "echo 'vagrant' | sudo -S /sbin/halt -h -p"
+      var.ssh_username == "root" ? (
+        var.os_name == "macos" ? "shutdown -h now" : (
+          var.os_name == "freebsd" ? "shutdown -p now" : (
+            var.os_name == "alpine" ? "poweroff" : "/sbin/halt -h -p"
+            )
+          )
+        ) : (
+        var.os_name == "macos" ? "echo 'vagrant' | sudo -S shutdown -h now" : (
+          var.os_name == "freebsd" ? "echo 'vagrant' | su -m root -c 'shutdown -p now'" : (
+            var.os_name == "alpine" ? "echo 'vagrant' | su -m root -c 'poweroff'" : "echo 'vagrant' | sudo -S /sbin/halt -h -p"
+          )
+        )
       )
     )
   ) : var.shutdown_command
