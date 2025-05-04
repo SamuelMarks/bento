@@ -122,19 +122,10 @@ locals {
                   "${path.root}/scripts/fedora/cleanup_dnf.sh",
                   "${path.root}/scripts/_common/minimize.sh"
                   ] : var.os_name == "alpine" ? [
-                    "${path.root}/scripts/alpine/networking_alpine.sh",
-                    "${path.root}/scripts/alpine/update_apk.sh",
-                    "${path.root}/scripts/_common/motd.sh",
-                    "${path.root}/scripts/_common/sshd.sh",
-                    "${path.root}/scripts/alpine/install-supporting-packages_alpine.sh",
-                    "${path.root}/scripts/alpine/build-tools_alpine.sh",
-                    "${path.root}/scripts/_common/virtualbox.sh",
-                    "${path.root}/scripts/_common/vmware.sh",
-                    "${path.root}/scripts/_common/parallels.sh",
-                    "${path.root}/scripts/_common/vagrant.sh",
-                    "${path.root}/scripts/alpine/real-tmp_alpine.sh",
-                    "${path.root}/scripts/alpine/cleanup_apk.sh",
-                    "${path.root}/scripts/_common/minimize.sh"
+                    "${path.root}/scripts/alpine/x-apk-update.sh",
+                    "${path.root}/scripts/alpine/x-only-virtualbox.sh",
+                    "${path.root}/scripts/alpine/x-provision.sh",
+                    "${path.root}/scripts/alpine/x-vmdiskclean.sh"
                     ] : [
                       "${path.root}/scripts/rhel/update_dnf.sh",
                       "${path.root}/scripts/_common/motd.sh",
