@@ -52,6 +52,8 @@ Markdown table generated at <https://www.tablesgenerator.com/markdown_tables#>
 
 ## [unreleased] (2026-06-04)
 
+- Allocate all LVM available space to root volume on Ubuntu boxes
+
 ## [5.1.0] (2026-06-04)
 
 - Removed Ubuntu 25.04
