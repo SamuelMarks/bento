@@ -9,7 +9,7 @@ case "$PACKER_BUILDER_TYPE" in
         cat >> /etc/NetworkManager/dispatcher.d/fix-slow-dns <<EOF
         #!/bin/bash
         echo "options single-request-reopen" >> /etc/resolv.conf
-        EOF
+EOF
         chmod +x /etc/NetworkManager/dispatcher.d/fix-slow-dns
         systemctl restart NetworkManager.service
         echo 'Slow DNS fix applied (single-request-reopen)'

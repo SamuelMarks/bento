@@ -4,7 +4,7 @@ set -eux
 
 echo "reduce the grub menu time to 1 second"
 sed -i -e 's/^GRUB_TIMEOUT=[0-9]\+$/GRUB_TIMEOUT=1/' /etc/default/grub
-grub2-mkconfig -o /boot/grub2/grub.cfg
+grub-mkconfig -o /boot/grub/grub.cfg
 
 echo "Remove development and kernel source packages"
 apk del linux-headers libelf gcc make perl
