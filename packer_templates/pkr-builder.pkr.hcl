@@ -124,6 +124,7 @@ build {
     pause_before      = "10s"
     pause_after       = "30s"
     scripts           = ["${path.root}/scripts/_common/build_tools.sh", ]
+    valid_exit_codes  = [0, 143]
     except            = var.is_windows ? local.source_names : null
   }
   # Run common scripts and guest tools installation
@@ -134,6 +135,7 @@ build {
     pause_before      = "10s"
     pause_after       = "30s"
     scripts           = local.common_scripts
+    valid_exit_codes  = [0, 143]
     except            = var.is_windows ? local.source_names : null
   }
   # Run OS specific scripts
@@ -143,6 +145,7 @@ build {
     expect_disconnect = true
     pause_before      = "10s"
     scripts           = local.scripts
+    valid_exit_codes = [0, 143]
     except            = var.is_windows ? local.source_names : null
   }
   # Run minimize script
@@ -220,11 +223,10 @@ build {
   }
   post-processor "vagrant" {
     compression_level = 9
-    output            = "${path.root}/../builds/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
+    output            = "${path.root}/../builds/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.qemu.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd.template" : null
     )
-    provider_override = "libvirt"
     only = ["qemu.vm"]
   }
   post-processor "utm-vagrant" {

@@ -273,7 +273,9 @@ locals {
   shutdown_command = var.shutdown_command == null ? (
     var.is_windows ? "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"" : (
       var.os_name == "macos" ? "echo 'vagrant' | sudo -S shutdown -h now" : (
+        var.os_name == "alpine" ? "echo 'vagrant' | sudo -S /sbin/poweroff" : (
         var.os_name == "freebsd" ? "echo 'vagrant' | su -m root -c 'shutdown -p now'" : "echo 'vagrant' | sudo -S /sbin/halt -h -p"
+        )
       )
     )
   ) : var.shutdown_command

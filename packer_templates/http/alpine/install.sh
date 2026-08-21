@@ -30,11 +30,15 @@ fi
 echo 'PermitRootLogin yes' >> /mnt/etc/ssh/sshd_config
 echo 'PasswordAuthentication yes' >> /mnt/etc/ssh/sshd_config
 
-sed -i 's/^#//g' /mnt/etc/apk/repositories
+sed -i 's/^#\(http\)/\1/g' /mnt/etc/apk/repositories
 chroot /mnt apk update
 
 # Ensure user exists, set ash shell, set passwords
 chroot /mnt adduser -D -s /bin/ash -g "" vagrant || true
+
+# Add sudo and curl and configure sudo for vagrant
+chroot /mnt apk add sudo curl
+echo 'vagrant ALL=(ALL) NOPASSWD: ALL' >> /mnt/etc/sudoers
 
 echo "vagrant:vagrant" | chroot /mnt chpasswd
 echo "root:vagrant" | chroot /mnt chpasswd
