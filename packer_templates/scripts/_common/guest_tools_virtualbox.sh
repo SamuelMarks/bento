@@ -49,6 +49,11 @@ virtualbox-iso|virtualbox-ovf)
     mkdir -p /tmp/vbox;
     mount -o loop "$HOME_DIR"/"$ISO" /tmp/vbox;
 
+    if [ -f "/sbin/apk" ]; then
+      echo "Alpine Linux: Skipping VirtualBox Guest Additions installation"
+      return 0 2>/dev/null || exit 0
+    fi
+
     echo "installing deps necessary to compile kernel modules"
     # We install things like kernel-headers here vs. kickstart files so we make sure we install them for the updated kernel not the stock kernel
     if [ -f "/bin/dnf" ]; then
@@ -57,8 +62,6 @@ virtualbox-iso|virtualbox-ovf)
       apt-get install -y build-essential dkms bzip2 tar linux-headers-"$(uname -r)"
     elif [ -f "/usr/bin/zypper" ]; then
       zypper install -y perl cpp gcc make bzip2 tar kernel-default-devel
-    elif [ -f "/sbin/apk" ]; then
-      apk add perl musl-dev gcc make bzip2 tar linux-headers
     fi
     echo "installing the vbox additions for architecture $ARCHITECTURE"
     # this install script fails with non-zero exit codes for no apparent reason so we need better ways to know if it worked

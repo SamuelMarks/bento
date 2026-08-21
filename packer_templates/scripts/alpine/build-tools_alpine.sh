@@ -2,4 +2,5 @@
 
 set -eux
 
-apk add autoconf gcc libelf libtool linux-headers make musl-dev perl
+# No build tools to install for Alpine
+

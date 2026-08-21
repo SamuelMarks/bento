@@ -91,7 +91,9 @@ locals {
     ]
   )
   nix_execute_command = var.os_name == "freebsd" ? "echo 'vagrant' | {{.Vars}} su -m root -c 'sh -eux {{.Path}}'" : (
-    var.os_name == "solaris" ? "echo 'vagrant'|sudo -S bash {{.Path}}" : "echo 'vagrant' | sudo -S {{ .Vars }} sh -eux '{{ .Path }}'"
+    var.os_name == "solaris" ? "echo 'vagrant'|sudo -S bash {{.Path}}" : (
+      var.os_name == "alpine" ? "{{ .Vars }} sh -eux '{{ .Path }}'" : "echo 'vagrant' | sudo -S {{ .Vars }} sh -eux '{{ .Path }}'"
+    )
   )
   elevated_user     = "vagrant"
   elevated_password = "vagrant"

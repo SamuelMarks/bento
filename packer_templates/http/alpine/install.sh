@@ -30,19 +30,11 @@ fi
 echo 'PermitRootLogin yes' >> /mnt/etc/ssh/sshd_config
 echo 'PasswordAuthentication yes' >> /mnt/etc/ssh/sshd_config
 
-# Install sudo and bash in the new system since bento relies on them
 sed -i 's/^#//g' /mnt/etc/apk/repositories
 chroot /mnt apk update
-chroot /mnt apk add sudo bash
 
-mkdir -p /mnt/etc/sudoers.d
-echo 'vagrant ALL=(ALL) NOPASSWD: ALL' > /mnt/etc/sudoers.d/vagrant
-chmod 440 /mnt/etc/sudoers.d/vagrant
-
-# Ensure user exists, set bash shell, set passwords
-chroot /mnt adduser -D -g "" vagrant || true
-sed -i '/^vagrant:/s|:[^:]*$|:/bin/bash|' /mnt/etc/passwd
-echo "/bin/bash" >> /mnt/etc/shells
+# Ensure user exists, set ash shell, set passwords
+chroot /mnt adduser -D -s /bin/ash -g "" vagrant || true
 
 echo "vagrant:vagrant" | chroot /mnt chpasswd
 echo "root:vagrant" | chroot /mnt chpasswd

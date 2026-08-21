@@ -1,7 +1,6 @@
 #!/bin/sh -eux
 
-# update all packages
-apk upgrade --available
+# No package updates for Alpine
 
 reboot;
 sleep 60;

@@ -6,4 +6,10 @@ iso_checksum            = "file:https://dl-cdn.alpinelinux.org/alpine/v3.21/rele
 parallels_guest_os_type = "otherlinux"
 vbox_guest_os_type      = "ArchLinux_64"
 vmware_guest_os_type    = "otherlinux-64"
-boot_command            = ["<wait><up>e<wait><down><down><end> inst.ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/fedora/ks.cfg inst.repo=https://download.fedoraproject.org/pub/fedora/linux/releases/41/Server/x86_64/os/ <F10><wait>"]
+boot_command            = [
+  "<enter><wait2><enter><wait2>",
+  "root<enter><wait2>",
+  "setup-interfaces -a -r<enter><wait5>",
+  "wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/alpine/install.sh -O install.sh<enter><wait2>",
+  "sh install.sh {{ .HTTPIP }} {{ .HTTPPort }}<enter>"
+]

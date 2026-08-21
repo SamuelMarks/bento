@@ -7,4 +7,14 @@ parallels_guest_os_type = "otherlinux"
 vbox_guest_os_type      = "ArchLinux_arm64"
 vmware_guest_os_type    = "otherlinux"
 parallels_boot_wait     = "0s"
-boot_command            = ["<up>e<wait><down><down><end> inst.ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/fedora/ks.cfg inst.repo=https://download.fedoraproject.org/pub/fedora/linux/releases/41/Server/aarch64/os/ <F10><wait>"]
+boot_command            = [
+  "<enter><wait2><enter><wait2>",
+  "root<enter><wait2>",
+  "echo 'HELLO WORLD' > /dev/ttyAMA0<enter><wait2>",
+  "setup-interfaces -a -r > /dev/ttyAMA0 2>&1<enter><wait5>",
+  "ifconfig > /dev/ttyAMA0 2>&1<enter><wait2>",
+  "ping -c 1 {{ .HTTPIP }} > /dev/ttyAMA0 2>&1<enter><wait2>",
+  "wget http://{{ .HTTPIP }}:{{ .HTTPPort }}/alpine/install.sh -O install.sh > /dev/ttyAMA0 2>&1<enter><wait2>",
+  "cat install.sh > /dev/ttyAMA0 2>&1<enter><wait2>",
+  "sh install.sh {{ .HTTPIP }} {{ .HTTPPort }} > /dev/ttyAMA0 2>&1<enter>"
+]

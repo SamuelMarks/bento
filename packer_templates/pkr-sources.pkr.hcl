@@ -314,7 +314,7 @@ source "hyperv-iso" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
   winrm_timeout           = var.winrm_timeout
   winrm_username          = var.winrm_username
@@ -346,7 +346,7 @@ source "parallels-ipsw" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   vm_name                 = local.vm_name
 }
 source "parallels-iso" "vm" {
@@ -379,7 +379,7 @@ source "parallels-iso" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
   winrm_timeout           = var.winrm_timeout
   winrm_username          = var.winrm_username
@@ -431,7 +431,7 @@ source "qemu" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
   winrm_timeout           = var.winrm_timeout
   winrm_username          = var.winrm_username
@@ -480,7 +480,7 @@ source "utm-iso" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
   winrm_timeout           = var.winrm_timeout
   winrm_username          = var.winrm_username
@@ -529,7 +529,7 @@ source "virtualbox-iso" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
   winrm_timeout           = var.winrm_timeout
   winrm_username          = var.winrm_username
@@ -553,7 +553,7 @@ source "virtualbox-ovf" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   vm_name                 = local.vm_name
 }
 source "vmware-iso" "vm" {
@@ -598,7 +598,7 @@ source "vmware-iso" "vm" {
   ssh_port                = var.ssh_port
   ssh_read_write_timeout  = var.ssh_read_write_timeout
   ssh_timeout             = var.ssh_timeout
-  ssh_username            = var.ssh_username
+  ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
   winrm_timeout           = var.winrm_timeout
   winrm_username          = var.winrm_username
