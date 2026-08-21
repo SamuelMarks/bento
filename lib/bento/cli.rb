@@ -17,7 +17,7 @@ class Options
            else
              RbConfig::CONFIG['host_cpu']
            end
-    not_buildable = YAML.load(File.read('builds.yml'))['do_not_build']
+    not_buildable = YAML.load_file('builds.yml')['do_not_build']
     options = OpenStruct.new
     options.template_files = calculate_templates("os_pkrvars/**/*-#{arch}.pkrvars.hcl")
     not_buildable.each do |os|
@@ -50,11 +50,11 @@ class Options
     }
 
     test_argv_proc = proc { |opts|
-      opts.regx = ARGV[0]
+      opts.regx = ARGV.first
     }
 
     md_json_argv_proc = proc { |opts|
-      opts.md_json = ARGV[0]
+      opts.md_json = ARGV.first
     }
 
     subcommand = {
@@ -89,11 +89,11 @@ class Options
             options.on_error = opt
           end
 
-          opts.on('--vars VARS', 'Comma seperated list of variable names equal values (ex: boot_wait="2s",ssh_timeout="5s")') do |opt|
+          opts.on('--vars VARS', 'Comma separated list of variable names equal values (ex: boot_wait="2s",ssh_timeout="5s")') do |opt|
             options.vars = opt
           end
 
-          opts.on('--var_files VAR_FILES', 'Comma seperated list of pkrvar.hcl files to include in the builds (ex: /path/to/var_file.pkrvars.hcl,/path/to/next/var_file2.pkrvars.hcl)') do |opt|
+          opts.on('--var_files VAR_FILES', 'Comma separated list of pkrvar.hcl files to include in the builds (ex: /path/to/var_file.pkrvars.hcl,/path/to/next/var_file2.pkrvars.hcl)') do |opt|
             options.var_files = opt
           end
 
@@ -165,7 +165,7 @@ class Options
             options.no_shared = opt
           end
 
-          opts.on('-p', '--provisioner PROVISIONER', 'Use a specfic provisioner') do |opt|
+          opts.on('-p', '--provisioner PROVISIONER', 'Use a specific provisioner') do |opt|
             options.provisioner = opt
           end
         end,

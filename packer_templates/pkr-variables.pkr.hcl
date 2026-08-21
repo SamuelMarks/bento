@@ -40,6 +40,7 @@ variable "sources_enabled" {
   default = [
     "source.parallels-iso.vm",
     "source.qemu.vm",
+    "source.utm-iso.vm",
     "source.virtualbox-iso.vm",
     "source.vmware-iso.vm",
   ]
@@ -48,6 +49,11 @@ variable "sources_enabled" {
 
 # Source block provider specific variables
 # hyperv-iso
+variable "hyperv_boot_command" {
+  type        = list(string)
+  default     = null
+  description = "Commands to pass to gui session to initiate automated install"
+}
 variable "hyperv_boot_wait" {
   type    = string
   default = null
@@ -75,6 +81,11 @@ variable "hyperv_switch_name" {
 }
 
 # parallels-ipsw
+variable "parallels-ipsw_boot_command" {
+  type        = list(string)
+  default     = null
+  description = "Commands to pass to gui session to initiate automated install"
+}
 variable "parallels_host_interfaces" {
   type        = list(string)
   default     = null
@@ -107,6 +118,11 @@ variable "http_content" {
 }
 
 # parallels-iso
+variable "parallels-iso_boot_command" {
+  type        = list(string)
+  default     = null
+  description = "Commands to pass to gui session to initiate automated install"
+}
 variable "parallels_boot_wait" {
   type    = string
   default = null
@@ -142,6 +158,11 @@ variable "qemu_binary" {
   type    = string
   default = null
 }
+variable "qemu_boot_command" {
+  type        = list(string)
+  default     = null
+  description = "Commands to pass to gui session to initiate automated install"
+}
 variable "qemu_boot_wait" {
   type    = string
   default = null
@@ -172,13 +193,8 @@ variable "qemu_disk_interface" {
 }
 variable "qemu_display" {
   type        = string
-  default     = "none"
-  description = "What QEMU -display option to use. Defaults to gtk, use none to not pass the -display option allowing QEMU to choose the default"
-}
-variable "qemu_use_default_display" {
-  type        = bool
   default     = null
-  description = "If true, do not pass a -display option to qemu, allowing it to choose the default"
+  description = "What QEMU -display option to use. Defaults to gtk, use none to not pass the -display option allowing QEMU to choose the default"
 }
 variable "qemu_disk_image" {
   type        = bool
@@ -202,7 +218,7 @@ variable "qemu_efi_firmware_vars" {
 }
 variable "qemu_efi_drop_efivars" {
   type        = bool
-  default     = false
+  default     = null
   description = "Drop EFI vars"
 }
 variable "qemu_format" {
@@ -220,26 +236,130 @@ variable "qemu_machine_type" {
 }
 variable "qemu_net_device" {
   type    = string
-  default = "virtio-net"
+  default = "virtio-net-pci"
 }
 variable "qemuargs" {
   type    = list(list(string))
   default = null
 }
+variable "qemu_use_default_display" {
+  type    = bool
+  default = null
+}
 variable "qemu_use_pflash" {
   type    = bool
-  default = false
+  default = true
+}
+
+# utm-iso
+variable "utm_boot_command" {
+  type        = list(string)
+  default     = null
+  description = "Commands to pass to gui session to initiate automated install"
+}
+variable "utm_boot_nopause" {
+  type        = bool
+  default     = true
+  description = "If true, the build process will not pause to confirm successful boot."
+}
+variable "utm_boot_wait" {
+  type    = string
+  default = null
+}
+variable "utm_disable_vnc" {
+  type    = bool
+  default = null
+}
+variable "utm_display_hardware_type" {
+  type    = string
+  default = null
+}
+variable "utm_display_nopause" {
+  type        = bool
+  default     = true
+  description = "If true, the build process will not pause to add display."
+}
+variable "utm_export_nopause" {
+  type        = bool
+  default     = true
+  description = "If true, the build process will not pause to allow pre-export steps."
+}
+variable "utm_guest_additions_mode" {
+  type    = string
+  default = null
+}
+variable "utm_guest_additions_path" {
+  type    = string
+  default = null
+}
+variable "utm_guest_additions_interface" {
+  type    = string
+  default = "usb"
+}
+variable "utm_guest_additions_url" {
+  type    = string
+  default = null
+}
+variable "utm_guest_additions_sha256" {
+  type    = string
+  default = null
+}
+variable "utm_guest_additions_target_path" {
+  type        = string
+  default     = null
+  description = "Target path for guest additions iso to be downloaded to"
+}
+variable "utm_hard_drive_interface" {
+  type    = string
+  default = "nvme"
+}
+variable "utm_hypervisor" {
+  type    = bool
+  default = true
+}
+variable "utm_iso_interface" {
+  type    = string
+  default = "usb"
+}
+variable "utm_uefi_boot" {
+  type    = bool
+  default = true
+}
+variable "utm_vm_arch" {
+  type    = string
+  default = null
+}
+variable "utm_vm_backend" {
+  type    = string
+  default = null
+}
+variable "utm_vm_icon" {
+  type    = string
+  default = null
 }
 
 # virtualbox-iso
+variable "vbox_boot_command" {
+  type        = list(string)
+  default     = null
+  description = "Commands to pass to gui session to initiate automated install"
+}
 variable "vbox_boot_wait" {
+  type    = string
+  default = null
+}
+variable "vbox_chipset" {
   type    = string
   default = null
 }
 variable "vbox_firmware" {
   type        = string
-  default     = null
+  default     = "efi"
   description = "Firmware type, takes bios or efi"
+}
+variable "vbox_gfx_accelerate_3d" {
+  type    = bool
+  default = null
 }
 variable "vbox_gfx_controller" {
   type    = string
@@ -278,6 +398,10 @@ variable "vboxmanage" {
   type    = list(list(string))
   default = null
 }
+variable "vbox_nested_virt" {
+  type    = bool
+  default = null
+}
 variable "vbox_nic_type" {
   type    = string
   default = null
@@ -290,6 +414,10 @@ variable "vbox_rtc_time_base" {
   type        = string
   default     = "UTC"
   description = "RTC time base"
+}
+variable "vbox_usb" {
+  type    = bool
+  default = false
 }
 
 # virtualbox-ovf
@@ -305,6 +433,11 @@ variable "vbox_checksum" {
 }
 
 # vmware-iso
+variable "vmware_boot_command" {
+  type        = list(string)
+  default     = null
+  description = "Commands to pass to gui session to initiate automated install"
+}
 variable "vmware_boot_wait" {
   type    = string
   default = null
@@ -321,12 +454,12 @@ variable "vmware_cores" {
 }
 variable "vmware_disk_adapter_type" {
   type        = string
-  default     = "sata"
-  description = "Disk adapter type.  Needs to be SATA (PVSCSI, or non-SCSI) for ARM64 builds."
+  default     = "nvme"
+  description = "The adapter type for additional virtual disk(s). Available options are ide, sata, nvme, or scsi."
 }
 variable "vmware_firmware" {
   type        = string
-  default     = null
+  default     = "efi"
   description = "The firmware type for the virtual machine. Allowed values are bios, efi, and efi-secure (for secure boot). Defaults to the recommended firmware type for the guest operating system"
 }
 variable "vmware_guest_os_type" {
@@ -334,13 +467,25 @@ variable "vmware_guest_os_type" {
   default     = null
   description = "OS type for virtualization optimization"
 }
+variable "vmware_tools_mode" {
+  type        = string
+  default     = null
+  description = "How to handle VMware Tools. Options: 'attach', 'upload', or 'disable'"
+}
+variable "vmware_tools_source_path" {
+  type        = string
+  default     = null
+  description = "Path to the VMware Tools ISO on the host. Can be used with 'attach' or 'upload' modes. When null and tools_mode is 'attach', auto-detects VMware installation path. Cannot be used with tools_upload_flavor"
+}
 variable "vmware_tools_upload_flavor" {
-  type    = string
-  default = null
+  type        = string
+  default     = null
+  description = "The flavor of VMware Tools to upload (darwin, linux, windows). Only used when tools_mode is 'upload' and tools_source_path is null. Cannot be used with tools_source_path"
 }
 variable "vmware_tools_upload_path" {
-  type    = string
-  default = null
+  type        = string
+  default     = null
+  description = "The path where VMware Tools will be uploaded in the guest. Only used when tools_mode is 'upload'"
 }
 variable "vmware_version" {
   type    = number
@@ -403,6 +548,10 @@ variable "communicator" {
   type    = string
   default = null
 }
+variable "pause_before_connecting" {
+  type    = string
+  default = null
+}
 variable "disk_size" {
   type    = number
   default = null
@@ -459,6 +608,10 @@ variable "ssh_port" {
   type    = number
   default = 22
 }
+variable "ssh_read_write_timeout" {
+  type    = string
+  default = "30s"
+}
 variable "ssh_timeout" {
   type    = string
   default = "15m"
@@ -473,7 +626,7 @@ variable "winrm_password" {
 }
 variable "winrm_timeout" {
   type    = string
-  default = "60m"
+  default = "30m"
 }
 variable "winrm_username" {
   type    = string

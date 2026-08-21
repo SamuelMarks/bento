@@ -1,6 +1,13 @@
 ---
 on:
   workflow_call:
+    inputs:
+      os_matrix:
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 env:
   PACKER_GITHUB_API_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -8,75 +15,64 @@ env:
 
 jobs:
   x86_64:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, X64, vmware]
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - almalinux-8
-          - almalinux-9
-          - alpine-3.21
-          - centos-stream-9
-          - centos-stream-10
-          - debian-11
-          - debian-12
-          - fedora-40
-          - fedora-41
-          - fedora-42
-          - freebsd-13
-          - freebsd-14
-          - opensuse-leap-15
-          - oraclelinux-8
-          - oraclelinux-9
-          - rockylinux-8
-          - rockylinux-9
-          - ubuntu-22.04
-          - ubuntu-24.04
+        os: ${{ fromJson(inputs.os_matrix) }}
         provider:
           - vmware-iso
     steps:
       - name: Checkout
         uses: actions/checkout@main
-      - name: Install Vagrant VMware-fusion
-        run: |
-          curl https://softwareupdate.vmware.com/cds/vmw-desktop/ws/17.6.2/24409262/linux/core/VMware-Workstation-17.6.2-24409262.x86_64.bundle.tar -o VMware-Workstation-17.6.2-24409262.x86_64.bundle.tar
-          tar -xvf VMware-Workstation-17.6.2-24409262.x86_64.bundle.tar
-          chmod +x VMware-Workstation-17.6.2-24409262.x86_64.bundle
-          sudo ./VMware-Workstation-17.6.2-24409262.x86_64.bundle --console --required
-          wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update && sudo apt install vagrant
-          vagrant plugin install vagrant-vmware-desktop
-      - name: Install Chef
-        uses: actionshub/chef-install@3.0.0
-        with:
-          version: 24.2.1058
-      - name: Setup Packer
-        uses: hashicorp/setup-packer@main
-        with:
-          version: latest
-      - name: Install Bento
-        run: |
-          eval "$(chef shell-init bash)"
-          gem build bento.gemspec
-          gem install bento-*.gem
+#      - name: Setup Packer
+#        if: steps.verify-changed-files.outputs.files_changed == 'true'
+#        uses: hashicorp/setup-packer@main
+#        with:
+#          version: latest
       - name: Bento build
         run: |
           eval "$(chef shell-init bash)"
-          bento build -o ${{ matrix.provider }}.vm --vars 'ssh_timeout=30m' os_pkrvars/$(echo ${{ matrix.os }} | cut -d "-" -f 1)/"${{ matrix.os }}-x86_64.pkrvars.hcl"
-          ls -alh builds/
-          cat builds/${{ matrix.os }}*-x86_64._metadata.json
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: "${{ matrix.os }}-vmware-x86_64"
-          path: |
-            builds/*.box
-            builds/*.json
-          overwrite: true
-          retention-days: 10
-          compression-level: 0 # no compression
+          bento build -o ${{ matrix.provider }}.vm os_pkrvars/$(echo ${{ matrix.os }} | cut -d "-" -f 1)/"${{ matrix.os }}-x86_64.pkrvars.hcl"
+          ls -alh builds/build_complete/
+          cat builds/build_complete/${{ matrix.os }}*-x86_64._metadata.json
       - name: Bento Test
         run: |
           eval "$(chef shell-init bash)"
           bento test
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ matrix.os }}-parallels-x86_64"
+          path: |
+            builds/testing_passed/x86_64/*.box
+            builds/testing_passed/x86_64/*.json
+          overwrite: true
+          retention-days: 10
+          compression-level: 0 # no compression
+      - name: Remove VM in case of canceled job
+        if: cancelled()
+        run: |
+          # Set your VM directory path
+          VM_DIR="$HOME/Documents/Virtual Machines.localized"
+          # VM name to search for (case-sensitive)
+          TARGET_VM_NAME="${{ matrix.os }}"
+          # List all VMs
+          echo "Listing all VMs in $VM_DIR..."
+          VM_PATHS=$(find "$VM_DIR" -name "*.vmx")
+          # Loop through each VM and match by name
+          for VMX in $VM_PATHS; do
+            if grep -q "$TARGET_VM_NAME" <<< "$VMX"; then
+              echo "Found VM: $VMX"
+              # Stop the VM
+              echo "Stopping VM..."
+              vmrun stop "$VMX" soft
+              # Wait a bit to ensure it's stopped
+              sleep 5
+              # Delete the VM directory
+              VM_FOLDER=$(dirname "$VMX")
+              echo "Deleting VM folder: $VM_FOLDER"
+              rm -rf "$VM_FOLDER"
+              echo "VM '$TARGET_VM_NAME' has been stopped and deleted."
+            fi
+          done

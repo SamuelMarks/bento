@@ -37,7 +37,7 @@ class BuildRunner
     templates = template_files
     banner('Starting build for templates:')
     banner('Installing packer plugins') unless dry_run || metadata_only
-    shellout("packer init -upgrade #{File.dirname(templates.first)}/../../packer_templates") unless dry_run || metadata_only
+    shellout("packer init -upgrade #{File.absolute_path("#{File.dirname(templates.first)}/../../packer_templates")}") unless dry_run || metadata_only
     templates.each { |t| puts "- #{t}" }
     time = Benchmark.measure do
       templates.each { |template| build(template) }
@@ -65,7 +65,7 @@ class BuildRunner
       time = Benchmark.measure do
         cmd.run_command
       end
-      if Dir.glob("../../builds/#{template.split('-')[0...-1].join('-')}*-#{template.split('-')[-1]}.*.box").empty?
+      if Dir.glob("../../builds/build_complete/#{template.split('-')[0...-1].join('-')}*-#{template.split('-').last}.*.box").empty?
         banner('Not writing metadata file since no boxes exist')
       else
         write_final_metadata(template, time.real.ceil)
@@ -81,7 +81,7 @@ class BuildRunner
 
   def packer_build_cmd(template, _var_file)
     pkrvars = "#{template}.pkrvars.hcl"
-    cmd = %W(packer build -timestamp-ui -force -var-file=#{pkrvars} ../../packer_templates)
+    cmd = %W(packer build -timestamp-ui -force -var-file=#{File.absolute_path(pkrvars)} #{File.absolute_path('../../packer_templates')})
     vars.each do |var|
       cmd.insert(4, "-var #{var}")
     end if vars
@@ -103,7 +103,7 @@ class BuildRunner
 
   def write_final_metadata(template, buildtime)
     md = BuildMetadata.new(template, build_timestamp, override_version, pkr_cmd).read
-    path = File.join('../../builds')
+    path = File.join('../../builds/build_complete')
     filename = File.join(path, "#{md[:template]}._metadata.json")
     md[:providers] = ProviderMetadata.new(path, md[:template]).read
     md[:providers].each do |p|

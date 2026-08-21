@@ -1,6 +1,13 @@
 ---
 on:
   workflow_call:
+    inputs:
+      os_matrix:
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 env:
   PACKER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -12,26 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - almalinux-8
-          - almalinux-9
-          - alpine-3.21
-          - centos-stream-9
-          - centos-stream-10
-          - debian-11
-          - debian-12
-          - fedora-40
-          - fedora-41
-          - fedora-42
-          - freebsd-13
-          - freebsd-14
-          - opensuse-leap-15
-          - oraclelinux-8
-          - oraclelinux-9
-          - rockylinux-8
-          - rockylinux-9
-          - ubuntu-22.04
-          - ubuntu-24.04
+        os: ${{ fromJson(inputs.os_matrix) }}
         provider:
           - virtualbox-iso
     steps:
@@ -44,11 +32,9 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
           echo "deb [signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
           sudo apt-get update
-          sudo apt-get install -y software-properties-common vagrant virtualbox-7.1
+          sudo apt-get install -y software-properties-common vagrant virtualbox-7.2
       - name: Install Chef
         uses: actionshub/chef-install@3.0.0
-        with:
-          version: 24.2.1058
       - name: Setup Packer
         uses: hashicorp/setup-packer@main
         with:
@@ -62,25 +48,36 @@ jobs:
         run: |
           rm -rf builds
           sudo mkdir -p /mnt/builds/iso
+          sudo mkdir -p /mnt/builds/build_complete
           sudo chmod -R 777 /mnt/builds
           sudo ln -s /mnt/builds ./
           eval "$(chef shell-init bash)"
           export LOGNAME=$USER
-          bento build -o ${{ matrix.provider }}.vm --vars 'ssh_timeout=30m' os_pkrvars/$(echo ${{ matrix.os }} | cut -d "-" -f 1)/"${{ matrix.os }}-x86_64.pkrvars.hcl"
-          ls -alh builds/
-          cat builds/${{ matrix.os }}*-x86_64._metadata.json
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: "${{ matrix.os }}-virtualbox-x86_64"
-          path: |
-            builds/*.box
-            builds/*.json
-          overwrite: true
-          retention-days: 10
-          compression-level: 0 # no compression
+          bento build -o ${{ matrix.provider }}.vm os_pkrvars/$(echo ${{ matrix.os }} | cut -d "-" -f 1)/"${{ matrix.os }}-x86_64.pkrvars.hcl"
+          ls -alh builds/build_complete/
+          cat builds/build_complete/${{ matrix.os }}*-x86_64._metadata.json
       - name: Bento Test
         run: |
           eval "$(chef shell-init bash)"
           export LOGNAME=$USER
           bento test
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ matrix.os }}-virtualbox-x86_64"
+          path: |
+            builds/testing_passed/x86_64/*.box
+            builds/testing_passed/x86_64/*.json
+          overwrite: true
+          retention-days: 10
+          compression-level: 0 # no compression
+      - name: Remove VM in case of canceled job
+        if: cancelled()
+        run: |
+          VM="$(VBoxManage list vms | grep ${{ matrix.os }} | cut -d " " -f 1)"
+          echo "VM Name: $VM"
+          echo Powering off and deleting any existing VMs named ${{ matrix.os }}*-aarch64
+          VBoxManage controlvm $VM poweroff
+          sleep 1
+          vboxmanage unregistervm $VM --delete
+          sleep 2
