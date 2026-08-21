@@ -5,7 +5,6 @@
 *__Note:__
 Markdown table generated at <https://www.tablesgenerator.com/markdown_tables#>
 
-
 ## Builds for version 202510.26.0
 
 | os | virtualbox<br>x86_64 | virtualbox<br>aarch64 | vmware<br>x86_64 | vmware<br>aarch64 | parallels<br>x86_64 | parallels<br>aarch64 | utm<br>x86_64 | utm<br>aarch64 | qemu<br>x86_64 | qemu<br>aarch64 | hyperv<br>x86_64 |

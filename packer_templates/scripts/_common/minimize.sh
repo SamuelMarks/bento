@@ -62,10 +62,10 @@ else
   rm /boot/whitespace
 
   set +e
-  swapuuid="$(/sbin/blkid -o value -l -s UUID -t TYPE=swap 2>/dev/null)" || true;
-  case "$?" in
-      2|0) ;;
-      *) echo "blkid returned $?, skipping swap wipe"; swapuuid="" ;;
+swapuuid="$(/sbin/blkid -o value -l -s UUID -t TYPE=swap 2>/dev/null)" || true;
+case "$?" in
+    2|0) ;;
+    *) echo "blkid returned $?, skipping swap wipe"; swapuuid="" ;;
   esac
   set -e
 

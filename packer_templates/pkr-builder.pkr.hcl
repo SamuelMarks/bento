@@ -59,16 +59,16 @@ locals {
                   "${path.root}/scripts/fedora/install-supporting-packages_fedora.sh",
                   "${path.root}/scripts/fedora/real-tmp_fedora.sh",
                   "${path.root}/scripts/fedora/cleanup_dnf.sh",
-                  ] : var.os_name == "alpine" ? [
-                    "${path.root}/scripts/alpine/networking_alpine.sh",
-                    "${path.root}/scripts/alpine/update_apk.sh",
-                    "${path.root}/scripts/alpine/install-supporting-packages_alpine.sh",
-                    "${path.root}/scripts/alpine/build-tools_alpine.sh",
-                    "${path.root}/scripts/alpine/real-tmp_alpine.sh",
-                    "${path.root}/scripts/alpine/cleanup_apk.sh"
-                    ] : [
-                      "${path.root}/scripts/rhel/cleanup_dnf.sh"
-                    ]
+] : var.os_name == "alpine" ? [
+  "${path.root}/scripts/alpine/networking_alpine.sh",
+  "${path.root}/scripts/alpine/update_apk.sh",
+  "${path.root}/scripts/alpine/install-supporting-packages_alpine.sh",
+  "${path.root}/scripts/alpine/build-tools_alpine.sh",
+  "${path.root}/scripts/alpine/real-tmp_alpine.sh",
+  "${path.root}/scripts/alpine/cleanup_apk.sh"
+  ] : [
+    "${path.root}/scripts/rhel/cleanup_dnf.sh"
+  ]
               )
             )
           )
@@ -91,9 +91,9 @@ locals {
     ]
   )
   nix_execute_command = var.os_name == "freebsd" ? "echo 'vagrant' | {{.Vars}} su -m root -c 'sh -eux {{.Path}}'" : (
-    var.os_name == "solaris" ? "echo 'vagrant'|sudo -S bash {{.Path}}" : (
-      var.os_name == "alpine" ? "{{ .Vars }} sh -eux '{{ .Path }}'" : "echo 'vagrant' | sudo -S {{ .Vars }} sh -eux '{{ .Path }}'"
-    )
+var.os_name == "solaris" ? "echo 'vagrant'|sudo -S bash {{.Path}}" : (
+  var.os_name == "alpine" ? "{{ .Vars }} sh -eux '{{ .Path }}'" : "echo 'vagrant' | sudo -S {{ .Vars }} sh -eux '{{ .Path }}'"
+)
   )
   elevated_user     = "vagrant"
   elevated_password = "vagrant"

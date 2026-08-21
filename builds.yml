@@ -9,11 +9,8 @@ public:
   - amazonlinux-2023
   - almalinux-8
   - almalinux-9
-
   - almalinux-10
-
   - alpine-3.21
-
   - centos-stream-9
   - centos-stream-10
   - debian-12
@@ -37,11 +34,8 @@ public:
 slugs:
   - almalinux-8
   - almalinux-9
-
   - almalinux-10
-
   - alpine-3.21
-
   - debian-12
   - debian-13
   - fedora-latest
