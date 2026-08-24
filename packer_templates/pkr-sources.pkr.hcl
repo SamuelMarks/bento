@@ -4,6 +4,8 @@ locals {
   # helper locals
   build_dir = abspath("${path.root}/../builds/")
   host_os   = try(data.host-info.this.os_type, "unknown")
+  host_arch_raw = try(data.host-info.this.architecture, "unknown")
+  host_arch = local.host_arch_raw == "arm64" ? "aarch64" : (local.host_arch_raw == "amd64" ? "x86_64" : local.host_arch_raw)
 
   # Source block provider specific
   # hyperv-iso
@@ -48,12 +50,15 @@ locals {
   ) : var.parallels_prlctl
 
   # qemu
-  qemu_accelerator = var.qemu_accelerator == null ? (
-    local.host_os == "darwin" ? "hvf" : (
-      local.host_os == "windows" ? "whpx" : "kvm"
-    )
+qemu_accelerator = var.qemu_accelerator == null ? (
+    local.host_arch == var.os_arch ? (
+      local.host_os == "darwin" ? "hvf" : (
+        local.host_os == "windows" ? "whpx" : "kvm"
+      )
+    ) : "tcg"
   ) : var.qemu_accelerator
   qemu_binary = var.qemu_binary == null ? "qemu-system-${var.os_arch}" : var.qemu_binary
+qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg" ? "max" : var.qemu_cpu_model
   qemu_display = var.qemu_display == null ? (
     var.is_windows ? (
       var.os_arch == "aarch64" ? "virtio-ramfb-gl" : "virtio-vga-gl"
@@ -64,11 +69,15 @@ locals {
     )
   ) : var.qemu_display
   qemu_efi_boot = var.qemu_efi_boot == null ? true : var.qemu_efi_boot
-  qemu_efi_firmware_code = local.qemu_efi_boot ? (
+qemu_efi_firmware_code = local.qemu_efi_boot ? (
     var.qemu_efi_firmware_code == null ? (
       local.host_os == "darwin" ? (
-        var.os_arch == "aarch64" ? "/opt/homebrew/share/qemu/edk2-aarch64-code.fd" : "/usr/local/share/qemu/edk2-x86_64-code.fd"
+        var.os_arch == "aarch64" ? (
+          fileexists("/opt/homebrew/share/qemu/edk2-aarch64-code.fd") ? "/opt/homebrew/share/qemu/edk2-aarch64-code.fd" : "/usr/local/share/qemu/edk2-aarch64-code.fd"
         ) : (
+          fileexists("/opt/homebrew/share/qemu/edk2-x86_64-code.fd") ? "/opt/homebrew/share/qemu/edk2-x86_64-code.fd" : "/usr/local/share/qemu/edk2-x86_64-code.fd"
+        )
+      ) : (
         var.os_arch == "aarch64" ? "/usr/local/share/qemu/edk2-aarch64-code.fd" : "/usr/local/share/qemu/edk2-x86_64-code.fd"
       )
     ) : var.qemu_efi_firmware_code
@@ -76,8 +85,12 @@ locals {
   qemu_efi_firmware_vars = local.qemu_efi_boot ? (
     var.qemu_efi_firmware_vars == null ? (
       local.host_os == "darwin" ? (
-        var.os_arch == "aarch64" ? "/opt/homebrew/share/qemu/edk2-arm-vars.fd" : "/usr/local/share/qemu/edk2-i386-vars.fd"
+        var.os_arch == "aarch64" ? (
+          fileexists("/opt/homebrew/share/qemu/edk2-arm-vars.fd") ? "/opt/homebrew/share/qemu/edk2-arm-vars.fd" : "/usr/local/share/qemu/edk2-i386-vars.fd"
         ) : (
+          fileexists("/opt/homebrew/share/qemu/edk2-i386-vars.fd") ? "/opt/homebrew/share/qemu/edk2-i386-vars.fd" : "/usr/local/share/qemu/edk2-i386-vars.fd"
+        )
+      ) : (
         var.os_arch == "aarch64" ? "/usr/local/share/qemu/edk2-arm-vars.fd" : "/usr/local/share/qemu/edk2-i386-vars.fd"
       )
     ) : var.qemu_efi_firmware_vars
@@ -390,7 +403,7 @@ source "parallels-iso" "vm" {
 source "qemu" "vm" {
   # QEMU specific options
   accelerator         = local.qemu_accelerator
-  cpu_model           = var.qemu_cpu_model
+  cpu_model           = local.qemu_cpu_model
   display             = local.qemu_display
   disk_cache          = var.qemu_disk_cache
   disk_compression    = var.qemu_disk_compression
