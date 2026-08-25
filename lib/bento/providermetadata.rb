@@ -94,11 +94,13 @@ class ProviderMetadata
   end
 
   def ver_libvirt
-    cmd = Mixlib::ShellOut.new('libvirtd -V')
-    cmd.run_command
-    cmd.stdout.split(' ').last
-  rescue Errno::ENOENT
-    'unknown'
+    begin
+      cmd = Mixlib::ShellOut.new('libvirtd -V')
+      cmd.run_command
+      cmd.stdout.split(' ').last
+    rescue Errno::ENOENT
+      ver_qemu
+    end
   end
 
   def ver_qemu
