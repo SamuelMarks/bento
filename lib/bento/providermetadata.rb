@@ -11,6 +11,11 @@ class ProviderMetadata
   def read
     if File.exist?("#{base}.libvirt.box")
       FileUtils.cp("#{base}.libvirt.box", "#{base}.qemu.box")
+      system("mkdir -p /tmp/qemu_box_temp_#{File.basename(base)}")
+      system("tar -xf #{base}.qemu.box -C /tmp/qemu_box_temp_#{File.basename(base)}")
+      system("sed -i '' 's/libvirt/qemu/' /tmp/qemu_box_temp_#{File.basename(base)}/metadata.json")
+      system("cd /tmp/qemu_box_temp_#{File.basename(base)} && tar -czf #{File.expand_path("#{base}.qemu.box")} *")
+      system("rm -rf /tmp/qemu_box_temp_#{File.basename(base)}")
     end
     Dir.glob("#{base}.*.box").map do |file|
       {
