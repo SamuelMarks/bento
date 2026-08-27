@@ -3,8 +3,8 @@ os_version = "2025"
 os_arch    = "x86_64"
 is_windows = true
 # Download url's found at https://www.microsoft.com/en-us/evalcenter/download-windows-server-2025
-iso_url                 = "https://software-static.download.prss.microsoft.com/dbazure/888969d5-f34g-4e03-ac9d-1f9786c66749/26100.1742.240906-0331.ge_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso"
-iso_checksum            = "d0ef4502e350e3c6c53c15b1b3020d38a5ded011bf04998e950720ac8579b23d"
+iso_url                 = "file:///Volumes/TOSHIBA_EXT/isos/en-us_windows_server_2025_x64_dvd_b7ec10f3.iso"
+iso_checksum            = "854109e1f215a29fc3541188297a6ca97c8a8f0f8c4dd6236b78dfdf845bf75e"
 parallels_guest_os_type = "win-2022"
 vbox_guest_os_type      = "Windows2025_64"
 vmware_guest_os_type    = "windows2022srvNext-64"

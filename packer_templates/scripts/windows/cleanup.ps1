@@ -34,14 +34,7 @@ if ($osInfo.ProductType -eq 1) { # cleanmgr isn't on servers
 }
 
 Write-Host 'Clean all of the event logs'
-@(
-    'Application',
-    'Security',
-    'Setup',
-    'System'
-) | ForEach-Object {
-    wevtutil clear-log $_
-}
+wevtutil el | ForEach-Object { wevtutil cl "$_" 2>$null }
 
 Write-Host "Cleaning Temp Files..."
 try {
@@ -72,7 +65,8 @@ Stop-ServiceForReal BITS               # Background Intelligent Transfer Service
 "$env:windir\Logs\*"
 "$env:windir\Panther\*"
 "$env:windir\WinSxS\ManifestCache\*"
-"$env:windir\SoftwareDistribution\Download"
+"$env:windir\SoftwareDistribution\Download\*"
+"$env:windir\SoftwareDistribution\DeliveryOptimization\*"
 "C:\Users\vagrant\Favorites\*"
 ) | Where-Object {Test-Path $_} | ForEach-Object {
     Write-Host "Removing temporary files $_..."
@@ -96,6 +90,13 @@ Stop-ServiceForReal BITS               # Background Intelligent Transfer Service
 #    it will not clean everything, as such, dism will clean the rest.
 # NB to analyse the used space use: dism.exe /Online /Cleanup-Image /AnalyzeComponentStore
 # see https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/clean-up-the-winsxs-folder
+Write-Host 'Disabling Windows Reserved Storage...'
+try {
+    DISM.exe /Online /Set-ReservedStorageState /State:Disabled
+} catch {
+    Write-Host "Ignoring error while disabling Reserved Storage"
+}
+
 Write-Host 'Cleaning up the WinSxS folder...'
 try
 {
@@ -147,3 +148,9 @@ try {
     New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name PagingFiles -Value '' -Force
 }
 catch { }
+
+Write-Host "Emptying Recycle Bin..."
+Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+
+Write-Host "Deleting Shadow Copies..."
+vssadmin delete shadows /all /quiet

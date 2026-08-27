@@ -207,6 +207,7 @@ build {
     elevated_user     = local.elevated_user
     scripts = [
       "${path.root}/scripts/windows/cleanup.ps1",
+      "${path.root}/scripts/windows/debloat.ps1",
       "${path.root}/scripts/windows/optimize.ps1"
     ]
     except = var.is_windows ? null : local.source_names
@@ -215,7 +216,7 @@ build {
   # Convert machines to vagrant boxes
   post-processor "vagrant" {
     compression_level = 9
-    output            = "${path.root}/../builds/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
+    output            = "/Volumes/TOSHIBA_EXT/vagrant/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd.template" : null
     )
@@ -223,7 +224,7 @@ build {
   }
   post-processor "vagrant" {
     compression_level = 9
-    output            = "${path.root}/../builds/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
+    output            = "/Volumes/TOSHIBA_EXT/vagrant/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd.template" : null
     )
@@ -232,7 +233,7 @@ build {
   }
   post-processor "utm-vagrant" {
     compression_level = 9
-    output            = "${path.root}/../builds/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
+    output            = "/Volumes/TOSHIBA_EXT/vagrant/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows-utm.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd-utm.template" : "${path.root}/vagrantfile-utm.template"
     )

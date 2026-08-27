@@ -4,6 +4,11 @@ Signal.trap('INT') { exit 1 }
 $stdout.sync = true
 $stderr.sync = true
 
+require 'dotenv'
+Dotenv.load
+
+ENV['PKR_VAR_windows_product_key'] = ENV['WINDOWS_SERVER_2025_STANDARD_EDITION'] if ENV['WINDOWS_SERVER_2025_STANDARD_EDITION']
+
 require_relative '../lib/bento/cli'
 
 begin

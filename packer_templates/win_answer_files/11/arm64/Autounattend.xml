@@ -41,6 +41,68 @@
                 <PathAndCredentials wcm:action="add" wcm:keyValue="11">
                     <Path>F:\vioserial\w11\ARM64</Path>
                 </PathAndCredentials>
+                
+                <PathAndCredentials wcm:action="add" wcm:keyValue="12">
+                    <Path>E:\viostor\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="13">
+                    <Path>E:\NetKVM\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="14">
+                    <Path>E:\Balloon\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="15">
+                    <Path>E:\pvpanic\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="16">
+                    <Path>E:\qemupciserial\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="17">
+                    <Path>E:\qxldod\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="18">
+                    <Path>E:\vioinput\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="19">
+                    <Path>E:\viorng\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="20">
+                    <Path>E:\vioscsi\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="21">
+                    <Path>E:\vioserial\w11\ARM64</Path>
+                </PathAndCredentials>
+
+                <PathAndCredentials wcm:action="add" wcm:keyValue="22">
+                    <Path>D:\viostor\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="23">
+                    <Path>D:\NetKVM\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="24">
+                    <Path>D:\Balloon\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="25">
+                    <Path>D:\pvpanic\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="26">
+                    <Path>D:\qemupciserial\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="27">
+                    <Path>D:\qxldod\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="28">
+                    <Path>D:\vioinput\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="29">
+                    <Path>D:\viorng\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="30">
+                    <Path>D:\vioscsi\w11\ARM64</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="31">
+                    <Path>D:\vioserial\w11\ARM64</Path>
+                </PathAndCredentials>
             </DriverPaths>
         </component>
 		<component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
@@ -285,7 +347,8 @@ foreach( $file in $Document.unattend.Extensions.File ) {
 	reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 1 /f;
 	reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultUserName /t REG_SZ /d "vagrant" /f;
 	reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /t REG_SZ /d "vagrant" /f;
-	cmd.exe /c 'winrm quickconfig -q -transport:http -force';
+	cmd.exe /c 'winrm quickconfig -q';
+	cmd.exe /c 'winrm quickconfig -transport:http';
 	cmd.exe /c 'winrm set winrm/config @{MaxTimeoutms="1800000"}';
 	cmd.exe /c 'winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}';
 	cmd.exe /c 'winrm set winrm/config/service @{AllowUnencrypted="true"}';

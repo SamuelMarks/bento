@@ -642,3 +642,9 @@ variable "scripts" {
   type    = list(string)
   default = null
 }
+
+variable "windows_product_key" {
+  type        = string
+  default     = ""
+  description = "The valid product key for Windows Server, typically loaded from .env"
+}

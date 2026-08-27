@@ -119,6 +119,13 @@ compact.exe /compactOS:always
 #
 # reclaim the free disk space.
 
+Write-Host "Removing pagefile, swapfile, and hiberfil if present..."
+try {
+    Remove-Item -Path "C:\pagefile.sys" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "C:\swapfile.sys" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "C:\hiberfil.sys" -Force -ErrorAction SilentlyContinue
+} catch { }
+
 Write-Host "Optimizing Drive"
 Optimize-Volume -DriveLetter C -Analyze -Defrag
 
@@ -126,7 +133,7 @@ Write-Host "Wiping empty space on disk..."
 $FilePath = "C:\zero.tmp"
 $Volume = Get-WmiObject win32_logicaldisk -filter "DeviceID='C:'"
 $ArraySize = 64kb
-$SpaceToLeave = $Volume.Size * 0.05
+$SpaceToLeave = 50MB
 $FileSize = $Volume.FreeSpace - $SpacetoLeave
 $ZeroArray = new-object byte[]($ArraySize)
 
@@ -145,3 +152,5 @@ finally {
 }
 
 Remove-Item $FilePath
+Write-Host "ReTrimming Drive to unmap zeroes..."
+Optimize-Volume -DriveLetter C -ReTrim -Verbose

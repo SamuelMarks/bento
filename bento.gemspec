@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
   s.files = %w(LICENSE Gemfile) + Dir.glob('*.gemspec') + Dir.glob('lib/**/*')
 
   s.add_dependency 'mixlib-shellout', '>= 2.3.2'
+  s.add_dependency 'dotenv'
   s.add_dependency 'test-kitchen', '>= 4.0.0'
   s.add_dependency 'kitchen-vagrant', '>= 2.2.1'
 

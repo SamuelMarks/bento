@@ -104,7 +104,7 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
       ["-device", "virtio-tablet"],
       ["-drive", "file=${local.build_dir}/iso/virtio-win.iso,media=cdrom,index=3"],
       ["-drive", "file=${abspath(local.iso_target_path)},media=cdrom,index=2"],
-      ["-drive", "file=${local.build_dir}/build_files/packer-${var.os_name}-${var.os_version}-${var.os_arch}-qemu/{{ .Name }},if=virtio,cache=writeback,discard=ignore,format=${var.qemu_format},index=1"],
+      ["-drive", "file=${local.build_dir}/build_files/packer-${var.os_name}-${var.os_version}-${var.os_arch}-qemu/{{ .Name }},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=${var.qemu_format},index=1"],
       ["-boot", "order=c,order=d"]
       ] : [
       ["-device", "virtio-gpu-pci"],
@@ -232,7 +232,7 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
       local.vmware_tools_mode == "attach" || local.vmware_tools_mode == "upload" ? (
         local.host_os == "darwin" ? (
           var.is_windows ? (
-            var.os_arch == "aarch64" ? "/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso" : "/Applications/VMware Fusion.app/Contents/Library/isoimages/x86_64/windows.iso"
+            var.os_arch == "aarch64" ? "/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso" : "/Applications/VMware Fusion.app/Contents/Library/isoimages/x86_x64/windows.iso"
           ) : null
           ) : (
           local.host_os == "windows" ? (
@@ -254,19 +254,17 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   ) : var.vmware_vmx_data
 
   # Source block common
-  cd_files = var.cd_files == null ? (
-    var.is_windows ? (
-      var.os_arch == "x86_64" ? (
-        var.hyperv_generation == 2 ? [
-          "${path.root}/win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml",
-          ] : [
-          "${path.root}/win_answer_files/${var.os_version}/Autounattend.xml",
-        ]
-        ) : [
-        "${path.root}/win_answer_files/${var.os_version}/arm64/Autounattend.xml",
-      ]
-    ) : null
-  ) : var.cd_files
+  cd_files = var.cd_files
+  cd_content = var.cd_content == null ? (
+    var.is_windows ? {
+      "Autounattend.xml" = templatefile(
+        var.os_arch == "x86_64" ? (
+          var.hyperv_generation == 2 ? "${path.root}/win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml" : "${path.root}/win_answer_files/${var.os_version}/Autounattend.xml"
+        ) : "${path.root}/win_answer_files/${var.os_version}/arm64/Autounattend.xml",
+        { windows_product_key = var.windows_product_key }
+      )
+    } : null
+  ) : var.cd_content
   communicator = var.communicator == null ? (
     var.is_windows ? "winrm" : "ssh"
   ) : var.communicator
@@ -282,7 +280,7 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   memory = var.memory == null ? (
     var.is_windows || var.os_name == "macos" || var.os_arch == "aarch64" ? 4096 : 3072
   ) : var.memory
-  output_directory = var.output_directory == null ? "${path.root}/../builds/build_files/packer-${var.os_name}-${var.os_version}-${var.os_arch}" : var.output_directory
+  output_directory = var.output_directory == null ? "/Volumes/TOSHIBA_EXT/vagrant/build_files/packer-${var.os_name}-${var.os_version}-${var.os_arch}" : var.output_directory
   shutdown_command = var.shutdown_command == null ? (
     var.is_windows ? "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"" : (
       var.os_name == "macos" ? "echo 'vagrant' | sudo -S shutdown -h now" : (
@@ -308,7 +306,7 @@ source "hyperv-iso" "vm" {
   # Source block common options
   boot_command            = var.hyperv_boot_command == null ? local.default_boot_command : var.hyperv_boot_command
   boot_wait               = var.hyperv_boot_wait == null ? local.default_boot_wait : var.hyperv_boot_wait
-  cd_content              = var.cd_content
+  cd_content              = local.cd_content
   cd_files                = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
@@ -374,7 +372,7 @@ source "parallels-iso" "vm" {
   # Source block common options
   boot_command            = var.parallels-iso_boot_command == null ? local.default_boot_command : var.parallels_boot_command
   boot_wait               = var.parallels_boot_wait == null ? local.default_boot_wait : var.parallels_boot_wait
-  cd_content              = var.cd_content
+  cd_content              = local.cd_content
   cd_files                = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
@@ -425,7 +423,7 @@ source "qemu" "vm" {
   # Source block common options
   boot_command            = var.qemu_boot_command == null ? local.default_boot_command : var.qemu_boot_command
   boot_wait               = var.qemu_boot_wait == null ? local.default_boot_wait : var.qemu_boot_wait
-  cd_content              = var.cd_content
+  cd_content              = local.cd_content
   cd_files                = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
@@ -475,7 +473,7 @@ source "utm-iso" "vm" {
   # Source block common options
   boot_command            = local.utm_boot_command
   boot_wait               = var.utm_boot_wait == null ? local.default_boot_wait : var.utm_boot_wait
-  cd_content              = var.cd_content
+  cd_content              = local.cd_content
   cd_files                = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
@@ -523,7 +521,7 @@ source "virtualbox-iso" "vm" {
   # Source block common options
   boot_command            = var.vbox_boot_command == null ? local.default_boot_command : var.vbox_boot_command
   boot_wait               = var.vbox_boot_wait == null ? local.default_boot_wait : var.vbox_boot_wait
-  cd_content              = var.cd_content
+  cd_content              = local.cd_content
   cd_files                = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
@@ -592,7 +590,7 @@ source "vmware-iso" "vm" {
   # Source block common options
   boot_command            = var.vmware_boot_command == null ? local.default_boot_command : var.vmware_boot_command
   boot_wait               = var.vmware_boot_wait == null ? local.default_boot_wait : var.vmware_boot_wait
-  cd_content              = var.cd_content
+  cd_content              = local.cd_content
   cd_files                = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
