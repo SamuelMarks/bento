@@ -7,15 +7,16 @@ hyperv_generation = 2
 # Official download url found at https://www.microsoft.com/en-us/software-download/windows11arm64
 # Expected unaltered SHA256: 638aa2c88e94385b00f4f178d071e3df0b7d9e335577a83bd533b7f2eb65adf0
 iso_url      = "file:///Volumes/TOSHIBA_EXT/isos/Win11_25H2_English_Arm64_v2.iso"
-iso_checksum = "9e3e390c788439e66f2dd8ea6d97c68dbd020735ec179b9d592e513107384dc9"
+iso_checksum = "41af60e2cc7313c04b2f8a0dbc83916873d78d538acf32e563e7baf1e85b1a21"
 
 cpus     = 4
 memory   = 6144
 headless = true
 
-boot_command      = ["<up><wait><up>"]
-default_boot_wait = "1s"
+boot_command      = ["fs0:<enter><wait>/efi/boot/bootaa64.efi<enter>"]
+default_boot_wait = "3s"
 vbox_boot_wait    = "10s"
+winrm_timeout     = "2h"
 
 qemu_accelerator      = "hvf"
 qemu_use_pflash       = true
