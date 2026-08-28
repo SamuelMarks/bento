@@ -648,3 +648,34 @@ variable "windows_product_key" {
   default     = ""
   description = "The valid product key for Windows Server, typically loaded from .env"
 }
+
+variable "qemu_vnc_bind_address" {
+  type    = string
+  default = "127.0.0.1"
+}
+variable "qemu_vnc_port_min" {
+  type    = number
+  default = 5900
+}
+variable "qemu_vnc_port_max" {
+  type    = number
+  default = 6000
+}
+
+variable "win11_media_raw" {
+  type        = string
+  default     = env("WIN11_MEDIA_RAW")
+  description = "Path to the raw Windows 11 installation media disk"
+}
+
+variable "bento_build_complete_dir" {
+  type        = string
+  default     = env("BENTO_BUILD_COMPLETE_DIR")
+  description = "Custom directory for completed box outputs"
+}
+
+variable "bento_build_files_dir" {
+  type        = string
+  default     = env("BENTO_BUILD_FILES_DIR")
+  description = "Custom directory for interim build files"
+}

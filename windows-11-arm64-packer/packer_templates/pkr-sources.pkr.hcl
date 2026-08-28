@@ -98,15 +98,33 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   qemu_machine_type = var.qemu_machine_type == null ? (
     var.os_arch == "aarch64" ? "virt" : "q35"
   ) : var.qemu_machine_type
+  win11_media_raw = var.win11_media_raw != null && var.win11_media_raw != "" ? var.win11_media_raw : (
+    fileexists("${local.build_dir}/iso/win11_media.raw") ? "${local.build_dir}/iso/win11_media.raw" : (
+      fileexists("${path.root}/../builds/iso/win11_media.raw") ? "${path.root}/../builds/iso/win11_media.raw" : (
+        fileexists("/Volumes/TOSHIBA_EXT/isos/win11_media.raw") ? "/Volumes/TOSHIBA_EXT/isos/win11_media.raw" : ""
+      )
+    )
+  )
+  build_complete_dir = var.bento_build_complete_dir != null && var.bento_build_complete_dir != "" ? var.bento_build_complete_dir : "${local.build_dir}/build_complete"
+  build_files_dir = var.bento_build_files_dir != null && var.bento_build_files_dir != "" ? var.bento_build_files_dir : "${local.build_dir}/build_files"
+
   qemuargs = var.qemuargs == null ? (
-    var.is_windows ? [
-      ["-device", "qemu-xhci"],
-      ["-device", "virtio-tablet"],
-      ["-drive", "file=${local.build_dir}/iso/virtio-win.iso,media=cdrom,readonly=on,file.locking=off,index=3"],
-      ["-drive", "file=${abspath(local.iso_target_path)},media=cdrom,readonly=on,file.locking=off,index=2"],
-      ["-drive", "file=${local.output_directory}-qemu/{{ .Name }},if=virtio,cache=writeback,discard=unmap,format=${var.qemu_format},index=1"],
-      ["-boot", "order=c,order=d"]
+    var.is_windows ? (
+      var.os_arch == "aarch64" && local.win11_media_raw != "" ? [
+        ["-drive", "file=${local.win11_media_raw},if=virtio,cache=unsafe,format=raw"],
+        ["-device", "qemu-xhci"],
+        ["-device", "usb-kbd"],
+        ["-device", "usb-tablet"],
+        ["-device", "ramfb"],
+        ["-boot", "strict=off"],
       ] : [
+        ["-device", "qemu-xhci"],
+        ["-device", "usb-kbd"],
+        ["-device", "usb-tablet"],
+        ["-device", "ramfb"],
+        ["-boot", "strict=off"],
+      ]
+    ) : [
       ["-device", "virtio-gpu-pci"],
       ["-device", "qemu-xhci"],
       ["-device", "virtio-tablet"],
@@ -213,7 +231,9 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
     var.is_windows && var.os_arch == "aarch64" ? "vmxnet3" : "e1000e"
   ) : var.vmware_network_adapter_type
   vmware_tools_mode = var.vmware_tools_mode == null ? (
-    var.is_windows ? "attach" : "disable"
+    var.is_windows ? (
+      local.host_os == "darwin" && !fileexists("/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso") ? "disable" : "attach"
+    ) : "disable"
   ) : var.vmware_tools_mode
   vmware_tools_upload_flavor = local.vmware_tools_mode == "upload" && var.vmware_tools_source_path == null ? (
     var.vmware_tools_upload_flavor == null ? (
@@ -232,7 +252,11 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
       local.vmware_tools_mode == "attach" || local.vmware_tools_mode == "upload" ? (
         local.host_os == "darwin" ? (
           var.is_windows ? (
-            var.os_arch == "aarch64" ? "/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso" : "/Applications/VMware Fusion.app/Contents/Library/isoimages/x86_x64/windows.iso"
+            var.os_arch == "aarch64" ? (
+              fileexists("/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso") ? "/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso" : null
+            ) : (
+              fileexists("/Applications/VMware Fusion.app/Contents/Library/isoimages/x86_x64/windows.iso") ? "/Applications/VMware Fusion.app/Contents/Library/isoimages/x86_x64/windows.iso" : null
+            )
           ) : null
           ) : (
           local.host_os == "windows" ? (
@@ -255,8 +279,24 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
 
   # Source block common
   cd_files = var.cd_files == null ? (
-    var.is_windows ? ["${path.root}/virtio-win"] : null
+    var.is_windows ? [
+      "${path.root}/cidata/Balloon",
+      "${path.root}/cidata/NetKVM",
+      "${path.root}/cidata/pvpanic",
+      "${path.root}/cidata/viofs",
+      "${path.root}/cidata/viogpudo",
+      "${path.root}/cidata/vioinput",
+      "${path.root}/cidata/viomem",
+      "${path.root}/cidata/viorng",
+      "${path.root}/cidata/vioscsi",
+      "${path.root}/cidata/vioserial",
+      "${path.root}/cidata/viostor",
+      "${path.root}/cidata/virtio-win-guest-tools.exe",
+    ] : null
   ) : var.cd_files
+  cd_label = var.cd_label == null ? (
+    var.is_windows ? "OEMDRV" : null
+  ) : var.cd_label
   cd_content = var.cd_content == null ? (
     var.is_windows ? {
       "Autounattend.xml" = templatefile(
@@ -282,7 +322,7 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   memory = var.memory == null ? (
     var.is_windows || var.os_name == "macos" || var.os_arch == "aarch64" ? 4096 : 3072
   ) : var.memory
-  output_directory = var.output_directory == null ? "/Volumes/TOSHIBA_EXT/vagrant/build_files/packer-${var.os_name}-${var.os_version}-${var.os_arch}" : var.output_directory
+  output_directory = var.output_directory == null ? "${local.build_files_dir}/packer-${var.os_name}-${var.os_version}-${var.os_arch}" : var.output_directory
   shutdown_command = var.shutdown_command == null ? (
     var.is_windows ? "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"" : (
       var.os_name == "macos" ? "echo 'vagrant' | sudo -S shutdown -h now" : (
@@ -584,8 +624,8 @@ source "vmware-iso" "vm" {
   guest_os_type                  = var.vmware_guest_os_type
   network                        = var.vmware_network
   network_adapter_type           = local.vmware_network_adapter_type
-  tools_mode                     = local.vmware_tools_mode
-  tools_source_path              = local.vmware_tools_source_path
+  tools_mode                     = var.vmware_tools_mode != null ? var.vmware_tools_mode : "disable"
+  tools_source_path              = var.vmware_tools_source_path
   tools_upload_flavor            = local.vmware_tools_upload_flavor
   tools_upload_path              = local.vmware_tools_upload_path
   usb                            = var.vmware_usb

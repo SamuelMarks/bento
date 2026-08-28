@@ -1,1 +1,0 @@
-cat windows-11-arm64-packer/packer_templates/pkr-variables.pkr.hcl | grep -v qemu_vnc
