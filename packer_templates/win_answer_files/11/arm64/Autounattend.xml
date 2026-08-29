@@ -6,39 +6,57 @@
         </component>
         <component name="Microsoft-Windows-PnpCustomizationsNonWinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <DriverPaths>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="1"><Path>D:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="2"><Path>D:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="3"><Path>D:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="4"><Path>D:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="5"><Path>D:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="6"><Path>D:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="7"><Path>D:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="8"><Path>D:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="9"><Path>D:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="10"><Path>D:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="11"><Path>D:\viomem\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="12"><Path>E:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="13"><Path>E:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="14"><Path>E:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="15"><Path>E:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="16"><Path>E:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="17"><Path>E:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="18"><Path>E:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="19"><Path>E:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="20"><Path>E:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="21"><Path>E:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="22"><Path>E:\viomem\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="23"><Path>F:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="24"><Path>F:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="25"><Path>F:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="26"><Path>F:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="27"><Path>F:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="28"><Path>F:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="29"><Path>F:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="30"><Path>F:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="31"><Path>F:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="32"><Path>F:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="33"><Path>F:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="1"><Path>X:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="2"><Path>C:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="3"><Path>D:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="4"><Path>E:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="5"><Path>F:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="6"><Path>G:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="7"><Path>H:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="8"><Path>D:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="9"><Path>D:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="10"><Path>D:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="11"><Path>D:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="12"><Path>D:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="13"><Path>D:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="14"><Path>D:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="15"><Path>D:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="16"><Path>D:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="17"><Path>D:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="18"><Path>D:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="19"><Path>E:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="20"><Path>E:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="21"><Path>E:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="22"><Path>E:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="23"><Path>E:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="24"><Path>E:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="25"><Path>E:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="26"><Path>E:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="27"><Path>E:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="28"><Path>E:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="29"><Path>E:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="30"><Path>F:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="31"><Path>F:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="32"><Path>F:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="33"><Path>F:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="34"><Path>F:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="35"><Path>F:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="36"><Path>F:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="37"><Path>F:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="38"><Path>F:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="39"><Path>F:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="40"><Path>F:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="41"><Path>G:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="42"><Path>G:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="43"><Path>G:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="44"><Path>G:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="45"><Path>G:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="46"><Path>G:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="47"><Path>G:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="48"><Path>G:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="49"><Path>G:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="50"><Path>G:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="51"><Path>G:\viomem\w11\ARM64</Path></PathAndCredentials>
             </DriverPaths>
         </component>
     </settings>
@@ -214,6 +232,26 @@
             <ComputerName>bento</ComputerName>
             <TimeZone>UTC</TimeZone>
         </component>
+        <component name="Microsoft-Windows-SystemRestore-Main" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <DisableSR>1</DisableSR>
+        </component>
+        <component name="Microsoft-Windows-SystemSettingsThreshold" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <DisplayNetworkSelection>false</DisplayNetworkSelection>
+        </component>
+        <component name="Networking-MPSSVC-Svc" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <FirewallGroups>
+                <FirewallGroup wcm:action="add" wcm:keyValue="WindowsRemoteManagement">
+                    <Active>true</Active>
+                    <Group>Windows Remote Management</Group>
+                    <Profile>all</Profile>
+                </FirewallGroup>
+                <FirewallGroup wcm:action="add" wcm:keyValue="RemoteAdministration">
+                    <Active>true</Active>
+                    <Group>Remote Administration</Group>
+                    <Profile>all</Profile>
+                </FirewallGroup>
+            </FirewallGroups>
+        </component>
         <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <SkipAutoActivation>true</SkipAutoActivation>
         </component>
@@ -368,6 +406,16 @@
                     <Order>16</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant /expires:never</CommandLine>
                     <Description>Disable password expiration for vagrant user</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /t REG_SZ /d "vagrant" /f</CommandLine>
+                    <Order>17</Order>
+                    <Description>Enable AutoLogon DefaultPassword</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 1 /f</CommandLine>
+                    <Order>18</Order>
+                    <Description>Enable AutoLogon AutoAdminLogon</Description>
                 </SynchronousCommand>
             </FirstLogonCommands>
         </component>

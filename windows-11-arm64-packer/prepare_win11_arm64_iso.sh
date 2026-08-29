@@ -100,6 +100,18 @@ fi
 # Create startup.nsh at root of ISO to ensure EDK2 automatically boots without dropping to UEFI Shell
 cat << 'EOF' > "${WORK_DIR}/startup.nsh"
 @echo -off
+if exist fs0:\EFI\Microsoft\Boot\bootmgfw.efi then
+  fs0:\EFI\Microsoft\Boot\bootmgfw.efi
+endif
+if exist fs1:\EFI\Microsoft\Boot\bootmgfw.efi then
+  fs1:\EFI\Microsoft\Boot\bootmgfw.efi
+endif
+if exist fs2:\EFI\Microsoft\Boot\bootmgfw.efi then
+  fs2:\EFI\Microsoft\Boot\bootmgfw.efi
+endif
+if exist fs3:\EFI\Microsoft\Boot\bootmgfw.efi then
+  fs3:\EFI\Microsoft\Boot\bootmgfw.efi
+endif
 if exist fs0:\efi\boot\bootaa64.efi then
   fs0:\efi\boot\bootaa64.efi
 endif
@@ -108,6 +120,9 @@ if exist fs1:\efi\boot\bootaa64.efi then
 endif
 if exist fs2:\efi\boot\bootaa64.efi then
   fs2:\efi\boot\bootaa64.efi
+endif
+if exist fs3:\efi\boot\bootaa64.efi then
+  fs3:\efi\boot\bootaa64.efi
 endif
 \efi\boot\bootaa64.efi
 \EFI\BOOT\BOOTAA64.EFI
@@ -152,31 +167,56 @@ wpeutil.exe UpdateBootInfo
 
 echo [WinPE] Locating Autounattend.xml...
 set UNATTEND=
-if exist X:\Autounattend.xml set UNATTEND=X:\Autounattend.xml
 for %%d in (D E F G H I J K L M N O P Q R S T U V W Y Z) do (
-    if exist %%d:\Autounattend.xml set UNATTEND=%%d:\Autounattend.xml
+    if exist %%d:\Autounattend.xml (
+        echo [WinPE] Found answer file on %%d:\Autounattend.xml
+        set UNATTEND=%%d:\Autounattend.xml
+    )
+)
+if not defined UNATTEND (
+    if exist X:\Autounattend.xml (
+        echo [WinPE] Falling back to X:\Autounattend.xml
+        set UNATTEND=X:\Autounattend.xml
+    )
 )
 echo [WinPE] Using answer file: %UNATTEND%
 
 echo [WinPE] Searching for install.wim...
+set SRC_DRIVE=
 for %%d in (D E F G H I J K L M N O P Q R S T U V W Y Z C) do (
     if exist %%d:\sources\install.wim (
         echo [WinPE] Found installation source on %%d:
-        cd /d %%d:
-        if defined UNATTEND (
-            echo [WinPE] Starting setup.exe /unattend:%UNATTEND%
-            setup.exe /unattend:%UNATTEND%
-        ) else (
-            echo [WinPE] Starting setup.exe
-            setup.exe
-        )
-        goto :done
+        set SRC_DRIVE=%%d:
+        goto :found_source
     )
 )
 
 echo [WinPE] ERROR: install.wim not found on any volume!
 pause
 cmd.exe
+goto :done
+
+:found_source
+cd /d %SRC_DRIVE%
+if defined UNATTEND (
+    echo [WinPE] Starting setup.exe /unattend:%UNATTEND% /noreboot
+    setup.exe /unattend:%UNATTEND% /noreboot
+) else (
+    echo [WinPE] Starting setup.exe /noreboot
+    setup.exe /noreboot
+)
+
+echo [WinPE] Setup phase 1 completed.
+echo [WinPE] Injecting VirtIO drivers into target Windows installation...
+for %%t in (C D E F G H W) do (
+    if exist %%t:\Windows\System32\config\SYSTEM (
+        echo [WinPE] Found offline target Windows at %%t:\Windows
+        dism.exe /Image:%%t:\ /Add-Driver /Driver:X:\drivers /Recurse /ForceUnsigned
+    )
+)
+
+echo [WinPE] Installation and driver injection successful. Rebooting system...
+wpeutil.exe reboot
 
 :done
 EOF
@@ -192,8 +232,15 @@ wpeinit
 call X:\install_drivers.cmd
 EOF
 
-cp "${ANSWER_FILE}" "${TEMP_SCRIPTS_DIR}/Autounattend.xml"
-cp "${ANSWER_FILE}" "${WORK_DIR}/Autounattend.xml"
+# Render template to valid XML with default Windows 11 Pro KMS key for fallback
+python3 -c "
+import re
+content = open('${ANSWER_FILE}').read()
+key = '${WIN11_PRODUCT_KEY:-W269N-WFGWX-YVC9B-4J6C9-T83GX}'
+content = re.sub(r'%\{\s*if\s+windows_product_key\s*!=\s*\"\"\s*\}.*?%\{\s*endif\s*\}', f'<Key>{key}</Key>', content, flags=re.DOTALL)
+open('${TEMP_SCRIPTS_DIR}/Autounattend.xml', 'w').write(content)
+open('${WORK_DIR}/Autounattend.xml', 'w').write(content)
+"
 
 # Update boot.wim index 1 & 2 using wimlib-imagex
 if command -v wimlib-imagex >/dev/null 2>&1; then

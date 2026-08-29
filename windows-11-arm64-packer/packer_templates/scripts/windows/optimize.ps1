@@ -23,11 +23,16 @@ try {
     Write-Host "CompactOS warning: $_"
 }
 
-Write-Host "Compressing static program directories using LZX..."
+Write-Host "Compressing static program and system directories using LZX..."
 @(
     "C:\Program Files",
     "C:\Program Files (x86)",
-    "C:\Windows\System32\DriverStore\FileRepository"
+    "C:\Windows\System32\DriverStore\FileRepository",
+    "C:\Windows\System32\WindowsPowerShell",
+    "C:\Windows\Microsoft.NET",
+    "C:\Windows\Inf",
+    "C:\Windows\Fonts",
+    "C:\Windows\WinSxS"
 ) | ForEach-Object {
     if (Test-Path $_) {
         try {
@@ -39,6 +44,22 @@ Write-Host "Compressing static program directories using LZX..."
 Write-Host "Disabling Hibernation to remove hiberfil.sys..."
 try {
     powercfg.exe /hibernate off
+} catch { }
+
+Write-Host "Deleting Volume Shadow Copies..."
+try {
+    vssadmin.exe delete shadows /all /quiet 2>$null
+} catch { }
+
+Write-Host "Disabling System Restore..."
+try {
+    Disable-ComputerRestore -Drive "C:" -ErrorAction SilentlyContinue
+} catch { }
+
+Write-Host "Purging Recycle Bin and DNS cache..."
+try {
+    Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+    Clear-DnsClientCache -ErrorAction SilentlyContinue
 } catch { }
 
 Write-Host "Optimizing and defragmenting volume..."

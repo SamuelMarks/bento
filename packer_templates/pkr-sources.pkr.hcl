@@ -1,10 +1,16 @@
-data "host-info" "this" {}
-
 locals {
   # helper locals
   build_dir = abspath("${path.root}/../builds/")
-  host_os   = try(data.host-info.this.os_type, "unknown")
-  host_arch_raw = try(data.host-info.this.architecture, "unknown")
+  host_os   = var.host_os != null && var.host_os != "" ? var.host_os : (
+    fileexists("/System/Library/CoreServices/SystemVersion.plist") ? "darwin" : (
+      fileexists("/etc/os-release") ? "linux" : "windows"
+    )
+  )
+  host_arch_raw = var.host_arch != null && var.host_arch != "" ? var.host_arch : (
+    fileexists("/opt/homebrew/bin/brew") ? "arm64" : (
+      fileexists("/usr/local/bin/brew") ? "amd64" : (var.os_arch == "aarch64" ? "arm64" : "amd64")
+    )
+  )
   host_arch = local.host_arch_raw == "arm64" ? "aarch64" : (local.host_arch_raw == "amd64" ? "x86_64" : local.host_arch_raw)
 
   # Source block provider specific
@@ -111,7 +117,9 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   qemuargs = var.qemuargs == null ? (
     var.is_windows ? (
       var.os_arch == "aarch64" && local.win11_media_raw != "" ? [
-        ["-drive", "file=${local.win11_media_raw},if=virtio,cache=unsafe,format=raw"],
+        ["-blockdev", "driver=file,node-name=win11media_f,filename=${local.win11_media_raw},read-only=on"],
+        ["-blockdev", "driver=raw,node-name=win11media_d,file=win11media_f,read-only=on"],
+        ["-device", "virtio-blk-pci,drive=win11media_d"],
         ["-device", "qemu-xhci"],
         ["-device", "usb-kbd"],
         ["-device", "usb-tablet"],
@@ -279,33 +287,37 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
 
   # Source block common
   cd_files = var.cd_files == null ? (
-    var.is_windows ? [
-      "${path.root}/cidata/Balloon",
-      "${path.root}/cidata/NetKVM",
-      "${path.root}/cidata/pvpanic",
-      "${path.root}/cidata/viofs",
-      "${path.root}/cidata/viogpudo",
-      "${path.root}/cidata/vioinput",
-      "${path.root}/cidata/viomem",
-      "${path.root}/cidata/viorng",
-      "${path.root}/cidata/vioscsi",
-      "${path.root}/cidata/vioserial",
-      "${path.root}/cidata/viostor",
-      "${path.root}/cidata/virtio-win-guest-tools.exe",
-    ] : null
+    var.is_windows ? (
+      var.os_arch == "aarch64" ? null : [
+        "${path.root}/cidata/Balloon",
+        "${path.root}/cidata/NetKVM",
+        "${path.root}/cidata/pvpanic",
+        "${path.root}/cidata/viofs",
+        "${path.root}/cidata/viogpudo",
+        "${path.root}/cidata/vioinput",
+        "${path.root}/cidata/viomem",
+        "${path.root}/cidata/viorng",
+        "${path.root}/cidata/vioscsi",
+        "${path.root}/cidata/vioserial",
+        "${path.root}/cidata/viostor",
+        "${path.root}/cidata/virtio-win-guest-tools.exe",
+      ]
+    ) : null
   ) : var.cd_files
   cd_label = var.cd_label == null ? (
     var.is_windows ? "OEMDRV" : null
   ) : var.cd_label
   cd_content = var.cd_content == null ? (
-    var.is_windows ? {
-      "Autounattend.xml" = templatefile(
-        var.os_arch == "x86_64" ? (
-          var.hyperv_generation == 2 ? "win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml" : "win_answer_files/${var.os_version}/Autounattend.xml"
-        ) : "win_answer_files/${var.os_version}/arm64/Autounattend.xml",
-        { windows_product_key = var.windows_product_key }
-      )
-    } : null
+    var.is_windows ? (
+      var.os_arch == "aarch64" ? null : {
+        "Autounattend.xml" = templatefile(
+          var.os_arch == "x86_64" ? (
+            var.hyperv_generation == 2 ? "win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml" : "win_answer_files/${var.os_version}/Autounattend.xml"
+          ) : "win_answer_files/${var.os_version}/arm64/Autounattend.xml",
+          { windows_product_key = var.windows_product_key }
+        )
+      }
+    ) : null
   ) : var.cd_content
   communicator = var.communicator == null ? (
     var.is_windows ? "winrm" : "ssh"

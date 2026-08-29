@@ -1,4 +1,14 @@
 # General variables
+variable "host_os" {
+  type        = string
+  default     = null
+  description = "Host operating system (e.g. darwin, linux, windows)"
+}
+variable "host_arch" {
+  type        = string
+  default     = null
+  description = "Host architecture (e.g. aarch64, x86_64)"
+}
 variable "os_name" {
   type        = string
   description = "OS Brand Name"
@@ -678,4 +688,10 @@ variable "bento_build_files_dir" {
   type        = string
   default     = env("BENTO_BUILD_FILES_DIR")
   description = "Custom directory for interim build files"
+}
+
+variable "install_windows_updates" {
+  type        = bool
+  default     = false
+  description = "Whether to execute the windows-update provisioner during build"
 }

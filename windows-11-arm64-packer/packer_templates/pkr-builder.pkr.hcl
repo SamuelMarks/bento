@@ -186,11 +186,11 @@ build {
       "exclude:$_.InstallationBehavior.CanRequestUserInput",
       "include:$true",
     ]
-    except = var.is_windows ? null : local.source_names
+    except = var.is_windows && var.install_windows_updates ? null : local.source_names
   }
   provisioner "windows-restart" {
     restart_timeout = "30m"
-    except          = var.is_windows ? null : local.source_names
+    except          = var.is_windows && var.install_windows_updates ? null : local.source_names
   }
   provisioner "powershell" {
     elevated_password = local.elevated_password

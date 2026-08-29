@@ -1,25 +1,3 @@
-#MIT License
-#
-#Copyright (c) 2017 Rui Lopes
-#
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
-#
-#The above copyright notice and this permission notice shall be included in all
-#copies or substantial portions of the Software.
-#
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-#SOFTWARE.
-
 Set-StrictMode -Version Latest
 $ProgressPreference = 'SilentlyContinue'
 $ErrorActionPreference = 'Stop'
@@ -45,11 +23,16 @@ try {
     Write-Host "CompactOS warning: $_"
 }
 
-Write-Host "Compressing static program directories using LZX..."
+Write-Host "Compressing static program and system directories using LZX..."
 @(
     "C:\Program Files",
     "C:\Program Files (x86)",
-    "C:\Windows\System32\DriverStore\FileRepository"
+    "C:\Windows\System32\DriverStore\FileRepository",
+    "C:\Windows\System32\WindowsPowerShell",
+    "C:\Windows\Microsoft.NET",
+    "C:\Windows\Inf",
+    "C:\Windows\Fonts",
+    "C:\Windows\WinSxS"
 ) | ForEach-Object {
     if (Test-Path $_) {
         try {
@@ -61,6 +44,22 @@ Write-Host "Compressing static program directories using LZX..."
 Write-Host "Disabling Hibernation to remove hiberfil.sys..."
 try {
     powercfg.exe /hibernate off
+} catch { }
+
+Write-Host "Deleting Volume Shadow Copies..."
+try {
+    vssadmin.exe delete shadows /all /quiet 2>$null
+} catch { }
+
+Write-Host "Disabling System Restore..."
+try {
+    Disable-ComputerRestore -Drive "C:" -ErrorAction SilentlyContinue
+} catch { }
+
+Write-Host "Purging Recycle Bin and DNS cache..."
+try {
+    Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+    Clear-DnsClientCache -ErrorAction SilentlyContinue
 } catch { }
 
 Write-Host "Optimizing and defragmenting volume..."
