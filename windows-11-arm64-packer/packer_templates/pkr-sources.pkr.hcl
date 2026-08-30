@@ -391,8 +391,10 @@ source "hyperv-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout = "2h"
+  winrm_timeout           = "2h"
   winrm_username          = var.winrm_username
+  winrm_insecure          = true
+  winrm_use_ssl           = false
   vm_name                 = local.vm_name
 }
 source "parallels-ipsw" "vm" {
@@ -456,8 +458,10 @@ source "parallels-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout = "2h"
+  winrm_timeout           = "2h"
   winrm_username          = var.winrm_username
+  winrm_insecure          = true
+  winrm_use_ssl           = false
   vm_name                 = local.vm_name
 }
 source "qemu" "vm" {
@@ -512,8 +516,10 @@ source "qemu" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout = "2h"
+  winrm_timeout           = "2h"
   winrm_username          = var.winrm_username
+  winrm_insecure          = true
+  winrm_use_ssl           = false
   vm_name                 = local.vm_name
 }
 source "utm-iso" "vm" {
@@ -561,8 +567,10 @@ source "utm-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout = "2h"
+  winrm_timeout           = "2h"
   winrm_username          = var.winrm_username
+  winrm_insecure          = true
+  winrm_use_ssl           = false
   vm_name                 = local.vm_name
 }
 source "virtualbox-iso" "vm" {
@@ -610,8 +618,10 @@ source "virtualbox-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout = "2h"
+  winrm_timeout           = "2h"
   winrm_username          = var.winrm_username
+  winrm_insecure          = true
+  winrm_use_ssl           = false
   vm_name                 = local.vm_name
 }
 source "virtualbox-ovf" "vm" {
@@ -679,7 +689,9 @@ source "vmware-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout = "2h"
+  winrm_timeout           = "2h"
   winrm_username          = var.winrm_username
+  winrm_insecure          = true
+  winrm_use_ssl           = false
   vm_name                 = local.vm_name
 }

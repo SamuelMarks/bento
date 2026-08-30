@@ -6,9 +6,9 @@ hyperv_generation = 2
 
 # Official download url found at https://www.microsoft.com/en-us/software-download/windows11arm64
 # Expected unaltered SHA256: 638aa2c88e94385b00f4f178d071e3df0b7d9e335577a83bd533b7f2eb65adf0
-iso_url      = "file:///Volumes/TOSHIBA_EXT/isos/Win11_25H2_English_Arm64_v2.iso"
-iso_checksum = "638aa2c88e94385b00f4f178d071e3df0b7d9e335577a83bd533b7f2eb65adf0"
-win11_oem_iso = "/Volumes/TOSHIBA_EXT/isos/Win11_25H2_English_Arm64_v2.iso"
+iso_url      = "file:///Volumes/TOSHIBA_EXT/isos/Win11_25H2_English_Arm64_v2_slipstream.iso"
+iso_checksum = "765fb13a5192d5015a373ef2a02ddd751bed47ece0072a649498ea74328bdf8b"
+win11_oem_iso = "/Volumes/TOSHIBA_EXT/isos/Win11_25H2_English_Arm64_v2_slipstream.iso"
 
 cpus     = 4
 memory   = 6144
