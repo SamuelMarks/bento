@@ -32,34 +32,15 @@ echo "==> Preparing Windows 11 ARM64 OEM ISO with drivers and answer file..."
 
 WORK_DIR=$(mktemp -d /tmp/bento_oem.XXXXXX)
 
-# 1. Copy VirtIO drivers
-mkdir -p "${WORK_DIR}/drivers"
-find "${CIDATA_DIR}" -type f \( -name "*.inf" -o -name "*.sys" -o -name "*.cat" -o -name "*.dll" -o -name "*.exe" \) -exec cp {} "${WORK_DIR}/drivers/" \;
+# 1. Copy VirtIO drivers preserving directory structure
+cp -R "${CIDATA_DIR}/"* "${WORK_DIR}/"
 
 # 2. Render Autounattend.xml
-# Update answer file to include PnpCustomLocation so Windows Setup automatically loads VirtIO drivers
 python3 -c "
 import re
 content = open('${ANSWER_FILE}').read()
 key = '${WIN11_PRODUCT_KEY:-W269N-WFGWX-YVC9B-4J6C9-T83GX}'
 content = re.sub(r'%\{\s*if\s+windows_product_key\s*!=\s*\"\"\s*\}.*?%\{\s*endif\s*\}', f'<Key>{key}</Key>', content, flags=re.DOTALL)
-
-# Inject driver path into windowsPE phase if not present
-driver_xml = '''<component name=\"Microsoft-Windows-PnpCustomizationsWinPE\" processorArchitecture=\"arm64\" publicKeyToken=\"31bf3856ad364e35\" language=\"neutral\" versionScope=\"nonSxS\" xmlns:wcm=\"http://schemas.microsoft.com/WMIConfig/2002/State\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">
-            <DriverPaths>
-                <PathAndCredentials wcm:action=\"add\" wcm:keyValue=\"1\">
-                    <Path>E:\\drivers</Path>
-                </PathAndCredentials>
-                <PathAndCredentials wcm:action=\"add\" wcm:keyValue=\"2\">
-                    <Path>F:\\drivers</Path>
-                </PathAndCredentials>
-                <PathAndCredentials wcm:action=\"add\" wcm:keyValue=\"3\">
-                    <Path>D:\\drivers</Path>
-                </PathAndCredentials>
-            </DriverPaths>
-        </component>'''
-if 'Microsoft-Windows-PnpCustomizationsWinPE' not in content:
-    content = content.replace('</settings>', f'{driver_xml}\\n    </settings>', 1)
 
 open('${WORK_DIR}/Autounattend.xml', 'w').write(content)
 "
