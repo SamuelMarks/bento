@@ -78,7 +78,7 @@ EOF
 
 # 4. Generate ISO
 if command -v hdiutil >/dev/null 2>&1; then
-    hdiutil makehybrid -iso -joliet -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
+    hdiutil makehybrid -iso -joliet -default-volume-name "OEMDRV" -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
 elif command -v mkisofs >/dev/null 2>&1; then
     mkisofs -J -R -V "OEMDRV" -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
 elif command -v xorriso >/dev/null 2>&1; then
