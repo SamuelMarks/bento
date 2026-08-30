@@ -12,7 +12,6 @@ if [ -f "${REPO_ROOT}/.env" ]; then
     set +a
 fi
 
-# Locate directories
 ISO_DIR="${ISO_DIR:-}"
 if [ -z "${ISO_DIR}" ]; then
     if [ -d "/Volumes/TOSHIBA_EXT/isos" ]; then
@@ -25,79 +24,47 @@ if [ -z "${ISO_DIR}" ]; then
 fi
 mkdir -p "${ISO_DIR}"
 
-UNALTERED_SHA256="638aa2c88e94385b00f4f178d071e3df0b7d9e335577a83bd533b7f2eb65adf0"
-
-# Search candidate locations for Windows 11 ARM64 ISO
-SRC_ISO="${WIN11_ISO_PATH:-}"
-if [ -z "${SRC_ISO}" ] || [ ! -f "${SRC_ISO}" ]; then
-    for c in "${ISO_DIR}/Win11_25H2_English_Arm64_v2.iso" "${ISO_DIR}/Win11_25H2_English_Arm64.iso" "${ISO_DIR}/Win11_24H2_English_Arm64.iso" "${ISO_DIR}/Win11_English_Arm64.iso" "${REPO_ROOT}/builds/iso/Win11_25H2_English_Arm64_v2.iso" "${REPO_ROOT}/builds/iso/Win11_25H2_English_Arm64.iso" "${SCRIPT_DIR}/builds/iso/Win11_25H2_English_Arm64_v2.iso" "${SCRIPT_DIR}/builds/iso/Win11_25H2_English_Arm64.iso"; do
-        if [ -f "${c}" ]; then
-            SRC_ISO="${c}"
-            break
-        fi
-    done
-fi
-
-if [ -z "${SRC_ISO}" ] || [ ! -f "${SRC_ISO}" ]; then
-    echo "================================================================================"
-    echo "ERROR: Windows 11 ARM64 ISO not found!"
-    echo ""
-    echo "Please download the official Windows 11 ARM64 ISO from Microsoft:"
-    echo "  https://www.microsoft.com/en-us/software-download/windows11arm64"
-    echo ""
-    echo "Expected unaltered ISO SHA256:"
-    echo "  ${UNALTERED_SHA256}"
-    echo "================================================================================"
-    exit 1
-fi
-
-echo "==> Using Source Windows 11 ARM64 ISO: ${SRC_ISO}"
-
-WORK_DIR="${ISO_DIR}/win11_arm64_src"
-TARGET_ISO="${ISO_DIR}/Win11_25H2_English_Arm64_v2.iso"
-TARGET_RAW="${ISO_DIR}/win11_media.raw"
+TARGET_OEM_ISO="${ISO_DIR}/bento_oem_arm64.iso"
 CIDATA_DIR="${SCRIPT_DIR}/packer_templates/cidata"
 ANSWER_FILE="${SCRIPT_DIR}/packer_templates/win_answer_files/11/arm64/Autounattend.xml"
 
-# Extract source ISO if source directory is missing or empty
-if [ ! -f "${WORK_DIR}/sources/boot.wim" ] || [ ! -f "${WORK_DIR}/sources/install.wim" ]; then
-    echo "==> Extracting source ISO to ${WORK_DIR}..."
-    mkdir -p "${WORK_DIR}"
-    if command -v 7z >/dev/null 2>&1; then
-        7z x -y -o"${WORK_DIR}" "${SRC_ISO}"
-    elif command -v hdiutil >/dev/null 2>&1; then
-        MOUNT_DIR=$(mktemp -d /tmp/win11_mount.XXXXXX)
-        hdiutil attach -nobrowse -mountpoint "${MOUNT_DIR}" "${SRC_ISO}"
-        cp -R "${MOUNT_DIR}/"* "${WORK_DIR}/"
-        hdiutil detach "${MOUNT_DIR}"
-        rm -rf "${MOUNT_DIR}"
-    else
-        echo "ERROR: Neither 7z nor hdiutil found to extract ISO."
-        exit 1
-    fi
-fi
+echo "==> Preparing Windows 11 ARM64 OEM ISO with drivers and answer file..."
 
-# Clean macOS metadata
-find "${WORK_DIR}" -name "._*" -delete 2>/dev/null || true
-if command -v dot_clean >/dev/null 2>&1; then
-    dot_clean "${WORK_DIR}" 2>/dev/null || true
-fi
+WORK_DIR=$(mktemp -d /tmp/bento_oem.XXXXXX)
 
-# Streamline install.wim: If multiple editions exist, export only Windows 11 Pro (index 3 or name match) to minimize image size
-if command -v wimlib-imagex >/dev/null 2>&1; then
-    WIM_COUNT=$(wimlib-imagex info "${WORK_DIR}/sources/install.wim" | grep "Image Count:" | awk '{print $3}')
-    if [ "${WIM_COUNT}" -gt 1 ]; then
-        echo "==> Streamlining install.wim: exporting Windows 11 Pro to reduce box and build size..."
-        PRO_INDEX=$(wimlib-imagex info "${WORK_DIR}/sources/install.wim" | grep -B 2 "Name:.*Windows 11 Pro" | grep "Index:" | head -n1 | awk '{print $2}')
-        if [ -z "${PRO_INDEX}" ]; then
-            PRO_INDEX=3
-        fi
-        wimlib-imagex export "${WORK_DIR}/sources/install.wim" "${PRO_INDEX}" "${WORK_DIR}/sources/install_pro.wim" --compress=LZX
-        mv "${WORK_DIR}/sources/install_pro.wim" "${WORK_DIR}/sources/install.wim"
-    fi
-fi
+# 1. Copy VirtIO drivers
+mkdir -p "${WORK_DIR}/drivers"
+find "${CIDATA_DIR}" -type f \( -name "*.inf" -o -name "*.sys" -o -name "*.cat" -o -name "*.dll" -o -name "*.exe" \) -exec cp {} "${WORK_DIR}/drivers/" \;
 
-# Create startup.nsh at root of ISO to ensure EDK2 automatically boots without dropping to UEFI Shell
+# 2. Render Autounattend.xml
+# Update answer file to include PnpCustomLocation so Windows Setup automatically loads VirtIO drivers
+python3 -c "
+import re
+content = open('${ANSWER_FILE}').read()
+key = '${WIN11_PRODUCT_KEY:-W269N-WFGWX-YVC9B-4J6C9-T83GX}'
+content = re.sub(r'%\{\s*if\s+windows_product_key\s*!=\s*\"\"\s*\}.*?%\{\s*endif\s*\}', f'<Key>{key}</Key>', content, flags=re.DOTALL)
+
+# Inject driver path into windowsPE phase if not present
+driver_xml = '''<component name=\"Microsoft-Windows-PnpCustomizationsWinPE\" processorArchitecture=\"arm64\" publicKeyToken=\"31bf3856ad364e35\" language=\"neutral\" versionScope=\"nonSxS\" xmlns:wcm=\"http://schemas.microsoft.com/WMIConfig/2002/State\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">
+            <DriverPaths>
+                <PathAndCredentials wcm:action=\"add\" wcm:keyValue=\"1\">
+                    <Path>E:\\drivers</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action=\"add\" wcm:keyValue=\"2\">
+                    <Path>F:\\drivers</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action=\"add\" wcm:keyValue=\"3\">
+                    <Path>D:\\drivers</Path>
+                </PathAndCredentials>
+            </DriverPaths>
+        </component>'''
+if 'Microsoft-Windows-PnpCustomizationsWinPE' not in content:
+    content = content.replace('</settings>', f'{driver_xml}\\n    </settings>', 1)
+
+open('${WORK_DIR}/Autounattend.xml', 'w').write(content)
+"
+
+# 3. Create startup.nsh to skip 'Press any key to boot from CD' and start setup automatically
 cat << 'EOF' > "${WORK_DIR}/startup.nsh"
 @echo -off
 if exist fs0:\EFI\Microsoft\Boot\bootmgfw.efi then
@@ -128,156 +95,20 @@ endif
 \EFI\BOOT\BOOTAA64.EFI
 EOF
 
-# Prepare flat drivers directory
-TEMP_DRV_DIR=$(mktemp -d /tmp/win11_drivers.XXXXXX)
-find "${CIDATA_DIR}" -type f \( -name "*.inf" -o -name "*.sys" -o -name "*.cat" -o -name "*.dll" -o -name "*.exe" \) -exec cp {} "${TEMP_DRV_DIR}/" \;
-
-# Prepare scripts to inject into WinPE
-TEMP_SCRIPTS_DIR=$(mktemp -d /tmp/win11_scripts.XXXXXX)
-
-cat << 'EOF' > "${TEMP_SCRIPTS_DIR}/install_drivers.cmd"
-@echo off
-echo ========================================================
-echo  Bento Windows 11 ARM64 WinPE Pre-Installation Setup
-echo ========================================================
-
-echo [WinPE] Injecting LabConfig bypasses into registry...
-reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassTPMCheck /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassSecureBootCheck /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassRAMCheck /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassCPUCheck /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassStorageCheck /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassDiskCheck /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassNRO /t REG_DWORD /d 1 /f
-reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f
-
-echo [WinPE] Loading VirtIO drivers from X:\drivers...
-for /r X:\drivers %%i in (*.inf) do (
-    echo Loading driver: %%i
-    drvload.exe "%%i"
-)
-
-echo [WinPE] Initializing WinPE networking and volume management...
-wpeinit
-
-echo [WinPE] Refreshing mount points...
-mountvol.exe /R
-mountvol.exe /E
-wpeutil.exe UpdateBootInfo
-
-echo [WinPE] Locating Autounattend.xml...
-set UNATTEND=
-for %%d in (D E F G H I J K L M N O P Q R S T U V W Y Z) do (
-    if exist %%d:\Autounattend.xml (
-        echo [WinPE] Found answer file on %%d:\Autounattend.xml
-        set UNATTEND=%%d:\Autounattend.xml
-    )
-)
-if not defined UNATTEND (
-    if exist X:\Autounattend.xml (
-        echo [WinPE] Falling back to X:\Autounattend.xml
-        set UNATTEND=X:\Autounattend.xml
-    )
-)
-echo [WinPE] Using answer file: %UNATTEND%
-
-echo [WinPE] Searching for install.wim...
-set SRC_DRIVE=
-for %%d in (D E F G H I J K L M N O P Q R S T U V W Y Z C) do (
-    if exist %%d:\sources\install.wim (
-        echo [WinPE] Found installation source on %%d:
-        set SRC_DRIVE=%%d:
-        goto :found_source
-    )
-)
-
-echo [WinPE] ERROR: install.wim not found on any volume!
-pause
-cmd.exe
-goto :done
-
-:found_source
-cd /d %SRC_DRIVE%
-if defined UNATTEND (
-    echo [WinPE] Starting setup.exe /unattend:%UNATTEND% /noreboot
-    setup.exe /unattend:%UNATTEND% /noreboot
-) else (
-    echo [WinPE] Starting setup.exe /noreboot
-    setup.exe /noreboot
-)
-
-echo [WinPE] Setup phase 1 completed.
-echo [WinPE] Injecting VirtIO drivers into target Windows installation...
-for %%t in (C D E F G H W) do (
-    if exist %%t:\Windows\System32\config\SYSTEM (
-        echo [WinPE] Found offline target Windows at %%t:\Windows
-        dism.exe /Image:%%t:\ /Add-Driver /Driver:X:\drivers /Recurse /ForceUnsigned
-    )
-)
-
-echo [WinPE] Installation and driver injection successful. Rebooting system...
-wpeutil.exe reboot
-
-:done
-EOF
-
-cat << 'EOF' > "${TEMP_SCRIPTS_DIR}/winpeshl.ini"
-[LaunchApps]
-"cmd.exe", "/c X:\install_drivers.cmd"
-EOF
-
-cat << 'EOF' > "${TEMP_SCRIPTS_DIR}/startnet.cmd"
-@echo off
-wpeinit
-call X:\install_drivers.cmd
-EOF
-
-# Render template to valid XML with default Windows 11 Pro KMS key for fallback
-python3 -c "
-import re
-content = open('${ANSWER_FILE}').read()
-key = '${WIN11_PRODUCT_KEY:-W269N-WFGWX-YVC9B-4J6C9-T83GX}'
-content = re.sub(r'%\{\s*if\s+windows_product_key\s*!=\s*\"\"\s*\}.*?%\{\s*endif\s*\}', f'<Key>{key}</Key>', content, flags=re.DOTALL)
-open('${TEMP_SCRIPTS_DIR}/Autounattend.xml', 'w').write(content)
-open('${WORK_DIR}/Autounattend.xml', 'w').write(content)
-"
-
-# Update boot.wim index 1 & 2 using wimlib-imagex
-if command -v wimlib-imagex >/dev/null 2>&1; then
-    echo "==> Injecting VirtIO drivers, winpeshl.ini, and automated setup scripts into boot.wim..."
-    cat << EOF > "${TEMP_SCRIPTS_DIR}/wim_cmds.txt"
-delete --force --recursive /drivers
-add ${TEMP_DRV_DIR} /drivers
-add ${TEMP_SCRIPTS_DIR}/Autounattend.xml /Autounattend.xml
-add ${TEMP_SCRIPTS_DIR}/install_drivers.cmd /install_drivers.cmd
-add ${TEMP_SCRIPTS_DIR}/winpeshl.ini /Windows/System32/winpeshl.ini
-add ${TEMP_SCRIPTS_DIR}/startnet.cmd /Windows/System32/startnet.cmd
-EOF
-
-    wimlib-imagex update "${WORK_DIR}/sources/boot.wim" 1 < "${TEMP_SCRIPTS_DIR}/wim_cmds.txt"
-    wimlib-imagex update "${WORK_DIR}/sources/boot.wim" 2 < "${TEMP_SCRIPTS_DIR}/wim_cmds.txt"
-fi
-
-rm -rf "${TEMP_DRV_DIR}" "${TEMP_SCRIPTS_DIR}"
-
-# Build ExFAT raw installation media disk
+# 4. Generate ISO
 if command -v hdiutil >/dev/null 2>&1; then
-    echo "==> Generating ExFAT raw media image: ${TARGET_RAW}..."
-    TEMP_DMG="${TARGET_RAW}.dmg"
-    rm -f "${TARGET_RAW}" "${TEMP_DMG}"
-    hdiutil create -size 8g -fs ExFAT -layout MBRSPUD -volname "WIN11" -srcfolder "${WORK_DIR}" -format UDRW -ov "${TEMP_DMG}"
-    mv "${TEMP_DMG}" "${TARGET_RAW}"
+    hdiutil makehybrid -iso -joliet -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
+elif command -v mkisofs >/dev/null 2>&1; then
+    mkisofs -J -R -V "OEMDRV" -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
+elif command -v xorriso >/dev/null 2>&1; then
+    xorriso -as mkisofs -J -R -V "OEMDRV" -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
+else
+    echo "ERROR: hdiutil, mkisofs, or xorriso required to create ISO."
+    exit 1
 fi
 
-# Build bootable UEFI ISO with xorriso
-if command -v xorriso >/dev/null 2>&1; then
-    echo "==> Mastering bootable UEFI ISO: ${TARGET_ISO}..."
-    rm -f "${TARGET_ISO}"
-    xorriso -as mkisofs -iso-level 4 -l -R -J -V "CCCOMA_A64FRE_EN-US_DV9" -e efi/microsoft/boot/efisys_noprompt.bin -no-emul-boot -isohybrid-gpt-basdat -o "${TARGET_ISO}" "${WORK_DIR}"
-fi
+rm -rf "${WORK_DIR}"
 
-CALCULATED_SHA256=$(shasum -a 256 "${TARGET_ISO}" | awk '{print $1}')
-echo "==> Remastered ISO SHA256: ${CALCULATED_SHA256}"
-echo "WIN11_TARGET_ISO=${TARGET_ISO}"
-echo "WIN11_TARGET_RAW=${TARGET_RAW}"
-echo "WIN11_ISO_CHECKSUM=${CALCULATED_SHA256}"
+echo "WIN11_TARGET_OEM_ISO=${TARGET_OEM_ISO}"
+echo "==> OEM ISO generation complete!"
+

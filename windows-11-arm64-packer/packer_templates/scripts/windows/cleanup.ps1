@@ -142,8 +142,13 @@ try {
     }
 } catch { }
 
-Write-Host 'Remove pagefile on shutdown (recreated automatically on boot)...'
+Write-Host 'Disable managed pagefile to delete it before final packaging...'
 try {
+    $computer = Get-WmiObject Win32_ComputerSystem
+    if ($null -ne $computer) {
+        $computer.AutomaticManagedPagefile = $False
+        $computer.Put() | Out-Null
+    }
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name PagingFiles -Value @('') -Type MultiString -Force -ErrorAction SilentlyContinue | Out-Null
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name ClearPageFileAtShutdown -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue | Out-Null
 } catch { }

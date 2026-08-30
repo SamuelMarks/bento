@@ -672,11 +672,7 @@ variable "qemu_vnc_port_max" {
   default = 6000
 }
 
-variable "win11_media_raw" {
-  type        = string
-  default     = env("WIN11_MEDIA_RAW")
-  description = "Path to the raw Windows 11 installation media disk"
-}
+
 
 variable "bento_build_complete_dir" {
   type        = string
@@ -694,4 +690,8 @@ variable "install_windows_updates" {
   type        = bool
   default     = false
   description = "Whether to execute the windows-update provisioner during build"
+}
+variable "win11_oem_iso" {
+  type    = string
+  default = ""
 }

@@ -64,7 +64,7 @@ qemu_accelerator = var.qemu_accelerator == null ? (
     ) : "tcg"
   ) : var.qemu_accelerator
   qemu_binary = var.qemu_binary == null ? "qemu-system-${var.os_arch}" : var.qemu_binary
-qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg" ? "max" : var.qemu_cpu_model
+qemu_cpu_model = var.is_windows && var.os_arch == "aarch64" ? "host" : (var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg" ? "max" : var.qemu_cpu_model)
   qemu_display = var.qemu_display == null ? (
     var.is_windows ? (
       var.os_arch == "aarch64" ? "cocoa" : "virtio-vga-gl"
@@ -101,38 +101,36 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
       )
     ) : var.qemu_efi_firmware_vars
   ) : null
-  qemu_machine_type = var.qemu_machine_type == null ? (
+  qemu_machine_type = var.qemu_machine_type == null ? ( var.is_windows && var.os_arch == "aarch64" ? "virt,highmem=on" :
     var.os_arch == "aarch64" ? "virt" : "q35"
   ) : var.qemu_machine_type
-  win11_media_raw = var.win11_media_raw != null && var.win11_media_raw != "" ? var.win11_media_raw : (
-    fileexists("${local.build_dir}/iso/win11_media.raw") ? "${local.build_dir}/iso/win11_media.raw" : (
-      fileexists("${path.root}/../builds/iso/win11_media.raw") ? "${path.root}/../builds/iso/win11_media.raw" : (
-        fileexists("/Volumes/TOSHIBA_EXT/isos/win11_media.raw") ? "/Volumes/TOSHIBA_EXT/isos/win11_media.raw" : ""
-      )
-    )
-  )
   build_complete_dir = var.bento_build_complete_dir != null && var.bento_build_complete_dir != "" ? var.bento_build_complete_dir : "${local.build_dir}/build_complete"
   build_files_dir = var.bento_build_files_dir != null && var.bento_build_files_dir != "" ? var.bento_build_files_dir : "${local.build_dir}/build_files"
 
   qemuargs = var.qemuargs == null ? (
     var.is_windows ? (
-      var.os_arch == "aarch64" && local.win11_media_raw != "" ? [
-        ["-blockdev", "driver=file,node-name=win11media_f,filename=${local.win11_media_raw},read-only=on"],
-        ["-blockdev", "driver=raw,node-name=win11media_d,file=win11media_f,read-only=on"],
-        ["-device", "virtio-blk-pci,drive=win11media_d"],
-        ["-device", "qemu-xhci"],
+      var.os_arch == "aarch64" && var.win11_oem_iso != "" ? [
+        ["-drive", "file=${local.qemu_efi_firmware_code},if=pflash,format=raw,readonly=on"],
+        ["-drive", "file=${local.qemu_efi_firmware_vars},if=pflash,format=raw"],
+        ["-device", "qemu-xhci,id=usb_xhci"],
         ["-device", "usb-kbd"],
         ["-device", "usb-tablet"],
         ["-device", "ramfb"],
-        ["-boot", "strict=off"],
+        ["-drive", "file=${var.win11_oem_iso},if=none,id=oem_cdrom,readonly=on,media=cdrom"],
+        ["-device", "usb-storage,bus=usb_xhci.0,drive=oem_cdrom"],
+        ["-boot", "strict=off"]
       ] : [
+        ["-drive", "file=${local.qemu_efi_firmware_code},if=pflash,format=raw,readonly=on"],
+        ["-drive", "file=${local.qemu_efi_firmware_vars},if=pflash,format=raw"],
         ["-device", "qemu-xhci"],
         ["-device", "usb-kbd"],
         ["-device", "usb-tablet"],
         ["-device", "ramfb"],
-        ["-boot", "strict=off"],
+        ["-boot", "strict=off"]
       ]
     ) : [
+      ["-drive", "file=${local.qemu_efi_firmware_code},if=pflash,format=raw,readonly=on"],
+      ["-drive", "file=${local.qemu_efi_firmware_vars},if=pflash,format=raw"],
       ["-device", "virtio-gpu-pci"],
       ["-device", "qemu-xhci"],
       ["-device", "virtio-tablet"],
@@ -143,7 +141,7 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
       ["-device", "virtio-serial"],
       ["-chardev", "socket,name=org.qemu.guest_agent.0,id=org.qemu.guest_agent,server=on,wait=off"],
       ["-device", "virtserialport,chardev=org.qemu.guest_agent,name=org.qemu.guest_agent.0"],
-      ["-boot", "strict=off"],
+      ["-boot", "strict=off"]
     ]
   ) : var.qemuargs
 
@@ -288,7 +286,20 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   # Source block common
   cd_files = var.cd_files == null ? (
     var.is_windows ? (
-      var.os_arch == "aarch64" ? null : [
+      var.os_arch == "aarch64" ? [
+        "${path.root}/cidata/Balloon",
+        "${path.root}/cidata/NetKVM",
+        "${path.root}/cidata/pvpanic",
+        "${path.root}/cidata/vioscsi",
+        "${path.root}/cidata/vioserial",
+        "${path.root}/cidata/vioinput",
+        "${path.root}/cidata/viorng",
+        "${path.root}/cidata/viofs",
+        "${path.root}/cidata/viogpudo",
+        "${path.root}/cidata/viomem",
+        "${path.root}/cidata/viostor",
+        "${path.root}/cidata/virtio-win-guest-tools.exe"
+      ] : [
         "${path.root}/cidata/Balloon",
         "${path.root}/cidata/NetKVM",
         "${path.root}/cidata/pvpanic",
@@ -309,7 +320,7 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   ) : var.cd_label
   cd_content = var.cd_content == null ? (
     var.is_windows ? (
-      var.os_arch == "aarch64" ? null : {
+      {
         "Autounattend.xml" = templatefile(
           var.os_arch == "x86_64" ? (
             var.hyperv_generation == 2 ? "win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml" : "win_answer_files/${var.os_version}/Autounattend.xml"
@@ -360,8 +371,8 @@ source "hyperv-iso" "vm" {
   # Source block common options
   boot_command            = var.hyperv_boot_command == null ? local.default_boot_command : var.hyperv_boot_command
   boot_wait               = var.hyperv_boot_wait == null ? local.default_boot_wait : var.hyperv_boot_wait
-  cd_content              = local.cd_content
-  cd_files                = local.cd_files
+  cd_content = local.cd_content
+  cd_files = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
   communicator            = local.communicator
@@ -383,7 +394,7 @@ source "hyperv-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout           = var.winrm_timeout
+  winrm_timeout = "2h"
   winrm_username          = var.winrm_username
   vm_name                 = local.vm_name
 }
@@ -426,8 +437,8 @@ source "parallels-iso" "vm" {
   # Source block common options
   boot_command            = var.parallels-iso_boot_command == null ? local.default_boot_command : var.parallels_boot_command
   boot_wait               = var.parallels_boot_wait == null ? local.default_boot_wait : var.parallels_boot_wait
-  cd_content              = local.cd_content
-  cd_files                = local.cd_files
+  cd_content = local.cd_content
+  cd_files = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
   communicator            = local.communicator
@@ -448,7 +459,7 @@ source "parallels-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout           = var.winrm_timeout
+  winrm_timeout = "2h"
   winrm_username          = var.winrm_username
   vm_name                 = local.vm_name
 }
@@ -481,8 +492,8 @@ source "qemu" "vm" {
   # Source block common options
   boot_command            = var.qemu_boot_command == null ? local.default_boot_command : var.qemu_boot_command
   boot_wait               = var.qemu_boot_wait == null ? local.default_boot_wait : var.qemu_boot_wait
-  cd_content              = local.cd_content
-  cd_files                = local.cd_files
+  cd_content = local.cd_content
+  cd_files = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
   communicator            = local.communicator
@@ -504,7 +515,7 @@ source "qemu" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout           = var.winrm_timeout
+  winrm_timeout = "2h"
   winrm_username          = var.winrm_username
   vm_name                 = local.vm_name
 }
@@ -531,8 +542,8 @@ source "utm-iso" "vm" {
   # Source block common options
   boot_command            = local.utm_boot_command
   boot_wait               = var.utm_boot_wait == null ? local.default_boot_wait : var.utm_boot_wait
-  cd_content              = local.cd_content
-  cd_files                = local.cd_files
+  cd_content = local.cd_content
+  cd_files = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
   communicator            = local.communicator
@@ -553,7 +564,7 @@ source "utm-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout           = var.winrm_timeout
+  winrm_timeout = "2h"
   winrm_username          = var.winrm_username
   vm_name                 = local.vm_name
 }
@@ -579,8 +590,8 @@ source "virtualbox-iso" "vm" {
   # Source block common options
   boot_command            = var.vbox_boot_command == null ? local.default_boot_command : var.vbox_boot_command
   boot_wait               = var.vbox_boot_wait == null ? local.default_boot_wait : var.vbox_boot_wait
-  cd_content              = local.cd_content
-  cd_files                = local.cd_files
+  cd_content = local.cd_content
+  cd_files = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
   communicator            = local.communicator
@@ -602,7 +613,7 @@ source "virtualbox-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout           = var.winrm_timeout
+  winrm_timeout = "2h"
   winrm_username          = var.winrm_username
   vm_name                 = local.vm_name
 }
@@ -648,8 +659,8 @@ source "vmware-iso" "vm" {
   # Source block common options
   boot_command            = var.vmware_boot_command == null ? local.default_boot_command : var.vmware_boot_command
   boot_wait               = var.vmware_boot_wait == null ? local.default_boot_wait : var.vmware_boot_wait
-  cd_content              = local.cd_content
-  cd_files                = local.cd_files
+  cd_content = local.cd_content
+  cd_files = local.cd_files
   cd_label                = var.cd_label
   cpus                    = var.cpus
   communicator            = local.communicator
@@ -671,7 +682,7 @@ source "vmware-iso" "vm" {
   ssh_timeout             = var.ssh_timeout
   ssh_username            = var.os_name == "alpine" ? "root" : var.ssh_username
   winrm_password          = var.winrm_password
-  winrm_timeout           = var.winrm_timeout
+  winrm_timeout = "2h"
   winrm_username          = var.winrm_username
   vm_name                 = local.vm_name
 }

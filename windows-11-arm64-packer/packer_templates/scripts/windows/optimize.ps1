@@ -70,31 +70,52 @@ try {
 }
 
 Write-Host "Zeroing free disk space for maximum box compression..."
-$FilePath = "C:\zero.tmp"
-$ArraySize = 4MB
-$ZeroArray = [byte[]]::new($ArraySize)
-
+$sdeleteDownloaded = $false
 try {
-    $Stream = [System.IO.File]::OpenWrite($FilePath)
-    try {
-        while ($true) {
-            $Stream.Write($ZeroArray, 0, $ZeroArray.Length)
-        }
-    } catch [System.IO.IOException] {
-        # Disk full reached - expected
-        Write-Host "Free disk space successfully filled with zeroes."
-    } finally {
-        if ($Stream) {
-            $Stream.Flush()
-            $Stream.Close()
-            $Stream.Dispose()
-        }
-    }
+    Write-Host "Downloading SDelete64a (ARM64) from Sysinternals..."
+    Invoke-WebRequest -Uri "https://live.sysinternals.com/sdelete64a.exe" -OutFile "$env:TEMP\sdelete.exe" -UseBasicParsing -ErrorAction Stop
+    $sdeleteDownloaded = $true
 } catch {
-    Write-Host "Zeroing caught error: $_"
-} finally {
-    if (Test-Path $FilePath) {
-        Remove-Item -Force $FilePath -ErrorAction SilentlyContinue
+    Write-Host "Failed to download SDelete: $_"
+}
+
+if ($sdeleteDownloaded) {
+    try {
+        Write-Host "Running SDelete to zero free space and MFT..."
+        Start-Process -FilePath "$env:TEMP\sdelete.exe" -ArgumentList "-z", "-accepteula", "C:" -Wait -NoNewWindow
+    } catch {
+        Write-Host "SDelete failed, falling back to manual zeroing."
+        $sdeleteDownloaded = $false
+    }
+}
+
+if (-not $sdeleteDownloaded) {
+    $FilePath = "C:\zero.tmp"
+    $ArraySize = 4MB
+    $ZeroArray = [byte[]]::new($ArraySize)
+
+    try {
+        $Stream = [System.IO.File]::OpenWrite($FilePath)
+        try {
+            while ($true) {
+                $Stream.Write($ZeroArray, 0, $ZeroArray.Length)
+            }
+        } catch [System.IO.IOException] {
+            # Disk full reached - expected
+            Write-Host "Free disk space successfully filled with zeroes."
+        } finally {
+            if ($Stream) {
+                $Stream.Flush()
+                $Stream.Close()
+                $Stream.Dispose()
+            }
+        }
+    } catch {
+        Write-Host "Zeroing caught error: $_"
+    } finally {
+        if (Test-Path $FilePath) {
+            Remove-Item -Force $FilePath -ErrorAction SilentlyContinue
+        }
     }
 }
 

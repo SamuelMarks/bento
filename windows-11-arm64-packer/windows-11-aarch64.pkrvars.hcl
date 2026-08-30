@@ -11,20 +11,20 @@ iso_checksum = "7acb33115b9973fb36d209414b35a45ac05836bdd9ea9a3dec85cf0eecfb1323
 
 cpus     = 4
 memory   = 6144
-headless = true
+headless = false
 
-boot_command      = ["<wait5s>fs0:<enter><wait1s>efi\\boot\\bootaa64.efi<enter>"]
-default_boot_wait = "5s"
+boot_command      = ["<wait3s><spacebar><wait1s><spacebar>"]
+default_boot_wait = "15s"
 vbox_boot_wait    = "10s"
 winrm_timeout     = "2h"
 
 qemu_accelerator      = "hvf"
 qemu_use_pflash       = true
 qemu_disk_interface   = "virtio"
-qemu_net_device       = "virtio-net-pci"
 qemu_vnc_bind_address = "127.0.0.1"
 
 parallels_guest_os_type = "win-11"
 vbox_guest_os_type      = "Windows11_arm64"
 vmware_guest_os_type    = "arm-windows11-64"
 utm_vm_icon             = "windows-11"
+disk_size = 40960
