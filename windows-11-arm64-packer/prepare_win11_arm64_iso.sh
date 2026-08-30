@@ -45,7 +45,18 @@ content = re.sub(r'%\{\s*if\s+windows_product_key\s*!=\s*\"\"\s*\}.*?%\{\s*endif
 open('${WORK_DIR}/Autounattend.xml', 'w').write(content)
 "
 
-# 3. Create startup.nsh to skip 'Press any key to boot from CD' and start setup automatically
+# 3. Create startnet.cmd to force drvload of virtio storage drivers immediately in WinPE
+mkdir -p "${WORK_DIR}/Windows/System32"
+cat << 'EOF' > "${WORK_DIR}/Windows/System32/startnet.cmd"
+wpeinit
+@echo off
+echo Loading VirtIO Drivers...
+drvload.exe "\viostor\w11\ARM64\viostor.inf"
+drvload.exe "\vioscsi\w11\ARM64\vioscsi.inf"
+drvload.exe "\NetKVM\w11\ARM64\netkvm.inf"
+EOF
+
+# 4. Create startup.nsh to skip 'Press any key to boot from CD' and start setup automatically
 cat << 'EOF' > "${WORK_DIR}/startup.nsh"
 @echo -off
 if exist fs0:\EFI\Microsoft\Boot\bootmgfw.efi then
