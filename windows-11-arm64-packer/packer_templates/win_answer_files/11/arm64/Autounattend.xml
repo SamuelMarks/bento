@@ -159,6 +159,7 @@
             </DiskConfiguration>
             <ImageInstall>
                 <OSImage>
+                    <Compact>true</Compact>
                     <InstallFrom>
                         <MetaData wcm:action="add">
                             <Key>/IMAGE/NAME</Key>

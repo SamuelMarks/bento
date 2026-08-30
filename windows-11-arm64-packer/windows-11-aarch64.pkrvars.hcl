@@ -13,7 +13,7 @@ cpus     = 4
 memory   = 6144
 headless = false
 
-boot_command      = ["<wait3s><spacebar><wait1s><spacebar>"]
+boot_command      = ["<spacebar><wait1s><spacebar><wait1s>FS0:\\efi\\boot\\bootaa64.efi<enter><wait2s><spacebar><wait1s><spacebar>"]
 default_boot_wait = "15s"
 vbox_boot_wait    = "10s"
 winrm_timeout     = "2h"

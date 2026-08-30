@@ -110,18 +110,15 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   qemuargs = var.qemuargs == null ? (
     var.is_windows ? (
       var.os_arch == "aarch64" && var.win11_oem_iso != "" ? [
-        ["-drive", "file=${local.qemu_efi_firmware_code},if=pflash,format=raw,readonly=on"],
-        ["-drive", "file=${local.qemu_efi_firmware_vars},if=pflash,format=raw"],
         ["-device", "qemu-xhci,id=usb_xhci"],
         ["-device", "usb-kbd"],
         ["-device", "usb-tablet"],
         ["-device", "ramfb"],
-        ["-drive", "file=${var.win11_oem_iso},if=none,id=oem_cdrom,readonly=on,media=cdrom"],
+        ["-blockdev", "driver=file,node-name=oem_cdrom_file,filename=${var.win11_oem_iso}"],
+        ["-blockdev", "driver=raw,node-name=oem_cdrom,file=oem_cdrom_file"],
         ["-device", "usb-storage,bus=usb_xhci.0,drive=oem_cdrom"],
         ["-boot", "strict=off"]
       ] : [
-        ["-drive", "file=${local.qemu_efi_firmware_code},if=pflash,format=raw,readonly=on"],
-        ["-drive", "file=${local.qemu_efi_firmware_vars},if=pflash,format=raw"],
         ["-device", "qemu-xhci"],
         ["-device", "usb-kbd"],
         ["-device", "usb-tablet"],

@@ -16,6 +16,12 @@ trap {
 # Enable TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
+Write-Host "Deleting residual pagefile and swapfile..."
+try {
+    Remove-Item -Path "C:\pagefile.sys" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "C:\swapfile.sys" -Force -ErrorAction SilentlyContinue
+} catch { }
+
 Write-Host "Enabling CompactOS compression on system binaries..."
 try {
     compact.exe /compactOS:always

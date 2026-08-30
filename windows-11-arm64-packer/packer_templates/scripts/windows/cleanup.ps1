@@ -129,6 +129,7 @@ Write-Host 'Cleaning temporary, cache, and log files...'
 
 Write-Host 'Cleaning and resetting WinSxS Component Store...'
 try {
+    dism.exe /Online /Set-ReservedStorageState /State:Disabled
     dism.exe /Online /Cleanup-Image /StartComponentCleanup /ResetBase
     dism.exe /Online /Cleanup-Image /SPSuperseded
 } catch {
