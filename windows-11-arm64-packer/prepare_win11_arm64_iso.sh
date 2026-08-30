@@ -24,7 +24,7 @@ if [ -z "${ISO_DIR}" ]; then
 fi
 mkdir -p "${ISO_DIR}"
 
-TARGET_OEM_ISO="${ISO_DIR}/bento_oem_arm64.iso"
+TARGET_OEM_ISO="${ISO_DIR}/bento_win11_arm64_unattend.iso"
 CIDATA_DIR="${SCRIPT_DIR}/packer_templates/cidata"
 ANSWER_FILE="${SCRIPT_DIR}/packer_templates/win_answer_files/11/arm64/Autounattend.xml"
 

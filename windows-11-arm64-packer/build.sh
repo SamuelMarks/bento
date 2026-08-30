@@ -76,7 +76,7 @@ if [ ! -f "${TARGET_ISO}" ]; then
 fi
 
 # Prepare OEM ISO with drivers and answer file
-TARGET_OEM_ISO="${ISO_DIR}/bento_oem_arm64.iso"
+TARGET_OEM_ISO="${ISO_DIR}/bento_win11_arm64_unattend.iso"
 if [ ! -f "${TARGET_OEM_ISO}" ]; then
     "${SCRIPT_DIR}/prepare_win11_arm64_iso.sh"
 fi
