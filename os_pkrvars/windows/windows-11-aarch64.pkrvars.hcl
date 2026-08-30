@@ -8,13 +8,15 @@ hyperv_generation = 2
 # Expected unaltered SHA256: 638aa2c88e94385b00f4f178d071e3df0b7d9e335577a83bd533b7f2eb65adf0
 iso_url      = "file:///Volumes/TOSHIBA_EXT/isos/Win11_25H2_English_Arm64_v2.iso"
 iso_checksum = "638aa2c88e94385b00f4f178d071e3df0b7d9e335577a83bd533b7f2eb65adf0"
+win11_oem_iso = "/Volumes/TOSHIBA_EXT/isos/Win11_25H2_English_Arm64_v2.iso"
 
 cpus     = 4
 memory   = 6144
 headless = false
 
-boot_command      = ["<wait5s>fs0:<enter><wait1s>efi\\boot\\bootaa64.efi<enter><wait3s><spacebar>"]
-default_boot_wait = "5s"
+boot_command      = ["<wait5s><spacebar><wait1s><spacebar><wait1s><spacebar>"]
+default_boot_wait = "10s"
+qemu_boot_wait    = "10s"
 vbox_boot_wait    = "10s"
 winrm_timeout     = "2h"
 
