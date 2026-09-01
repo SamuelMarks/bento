@@ -59,43 +59,35 @@ EOF
 # 4. Create startup.nsh to skip 'Press any key to boot from CD' and start setup automatically
 cat << 'EOF' > "${WORK_DIR}/startup.nsh"
 @echo -off
-if exist fs0:\EFI\Microsoft\Boot\bootmgfw.efi then
-  fs0:\EFI\Microsoft\Boot\bootmgfw.efi
-endif
-if exist fs1:\EFI\Microsoft\Boot\bootmgfw.efi then
-  fs1:\EFI\Microsoft\Boot\bootmgfw.efi
-endif
-if exist fs2:\EFI\Microsoft\Boot\bootmgfw.efi then
-  fs2:\EFI\Microsoft\Boot\bootmgfw.efi
-endif
-if exist fs3:\EFI\Microsoft\Boot\bootmgfw.efi then
-  fs3:\EFI\Microsoft\Boot\bootmgfw.efi
-endif
-if exist fs0:\efi\boot\bootaa64.efi then
-  fs0:\efi\boot\bootaa64.efi
-endif
-if exist fs1:\efi\boot\bootaa64.efi then
-  fs1:\efi\boot\bootaa64.efi
-endif
-if exist fs2:\efi\boot\bootaa64.efi then
-  fs2:\efi\boot\bootaa64.efi
-endif
-if exist fs3:\efi\boot\bootaa64.efi then
-  fs3:\efi\boot\bootaa64.efi
-endif
-\efi\boot\bootaa64.efi
-\EFI\BOOT\BOOTAA64.EFI
+echo "Looking for Windows Bootloader (No Prompt)..."
+for %i in 0 1 2 3 4 5
+  if exist fs%i:\efi\microsoft\boot\cdboot_noprompt.efi then
+    echo "Found on fs%i:\efi\microsoft\boot\cdboot_noprompt.efi"
+    fs%i:\efi\microsoft\boot\cdboot_noprompt.efi
+    goto DONE
+  endif
+endfor
+
+echo "Fallback to bootaa64.efi if noprompt not found..."
+for %i in 0 1 2 3 4 5
+  if exist fs%i:\efi\boot\bootaa64.efi then
+    echo "Found on fs%i:\efi\boot\bootaa64.efi"
+    fs%i:\efi\boot\bootaa64.efi
+    goto DONE
+  endif
+endfor
+
+:DONE
 EOF
 
-# 4. Generate ISO
+# 4. Generate FAT32 Image
 if command -v hdiutil >/dev/null 2>&1; then
-    hdiutil makehybrid -iso -joliet -default-volume-name "OEMDRV" -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
-elif command -v mkisofs >/dev/null 2>&1; then
-    mkisofs -J -R -V "OEMDRV" -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
-elif command -v xorriso >/dev/null 2>&1; then
-    xorriso -as mkisofs -J -R -V "OEMDRV" -o "${TARGET_OEM_ISO}" "${WORK_DIR}"
+    TMP_IMG=$(mktemp /tmp/bento_oem_img.XXXXXX)
+    hdiutil create -fs "MS-DOS FAT32" -volname "OEMDRV" -srcfolder "${WORK_DIR}" -format UDTO -o "${TMP_IMG}"
+    mv "${TMP_IMG}.cdr" "${TARGET_OEM_ISO}"
+    rm -f "${TMP_IMG}"
 else
-    echo "ERROR: hdiutil, mkisofs, or xorriso required to create ISO."
+    echo "ERROR: hdiutil is required on macOS to create FAT32 image."
     exit 1
 fi
 

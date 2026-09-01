@@ -96,6 +96,17 @@
                 <PathAndCredentials wcm:action="add" wcm:keyValue="31"><Path>F:\viofs\w11\ARM64</Path></PathAndCredentials>
                 <PathAndCredentials wcm:action="add" wcm:keyValue="32"><Path>F:\viogpudo\w11\ARM64</Path></PathAndCredentials>
                 <PathAndCredentials wcm:action="add" wcm:keyValue="33"><Path>F:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="34"><Path>C:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="35"><Path>C:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="36"><Path>C:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="37"><Path>C:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="38"><Path>C:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="39"><Path>C:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="40"><Path>C:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="41"><Path>C:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="42"><Path>C:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="43"><Path>C:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="44"><Path>C:\viomem\w11\ARM64</Path></PathAndCredentials>
             </DriverPaths>
         </component>
         <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">

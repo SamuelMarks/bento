@@ -6,8 +6,16 @@ $selectors = @(
     'Microsoft-SnippingTool'
     'WorkFolders-Client'
     'Printing-Foundation-Features'
+    'Printing-Foundation-InternetClients'
+    'Printing-Foundation-LPDPrintService'
+    'Printing-Foundation-LPRngPrintService'
     'SmbDirect'
     'MSRDC-Infrastructure'
+    'FaxServicesClientPackage'
+    'WCF-TCP-PortSharing45'
+    'WCF-HTTP-Activation45'
+    'WCF-NonHTTP-Activation'
+    'Internet-Explorer-Optional-amd64'
 )
 
 $getCommand = {

@@ -118,4 +118,26 @@ if (Test-Path "$env:SystemRoot\SysWOW64\OneDriveSetup.exe") {
     Start-Process "$env:SystemRoot\System32\OneDriveSetup.exe" -ArgumentList "/uninstall" -Wait -NoNewWindow
 }
 
+# Remove Microsoft Edge and WebView2 aggressively
+Write-Host "Attempting to remove Microsoft Edge and WebView2..." -ForegroundColor Yellow
+try {
+    $edgeSetup = (Get-ChildItem -Path "C:\Program Files (x86)\Microsoft\Edge\Application\*\Installer\setup.exe" -ErrorAction SilentlyContinue | Select-Object -First 1)
+    if ($edgeSetup) {
+        Write-Host "Uninstalling Edge..."
+        Start-Process -FilePath $edgeSetup.FullName -ArgumentList "--uninstall --system-level --verbose-logging --force-uninstall" -Wait -NoNewWindow -ErrorAction SilentlyContinue
+    }
+    
+    $webviewSetup = (Get-ChildItem -Path "C:\Program Files (x86)\Microsoft\EdgeWebView\Application\*\Installer\setup.exe" -ErrorAction SilentlyContinue | Select-Object -First 1)
+    if ($webviewSetup) {
+        Write-Host "Uninstalling Edge WebView2..."
+        Start-Process -FilePath $webviewSetup.FullName -ArgumentList "--uninstall --msedgewebview --system-level --verbose-logging --force-uninstall" -Wait -NoNewWindow -ErrorAction SilentlyContinue
+    }
+
+    # Force delete leftovers
+    Remove-Item -Path "C:\Program Files (x86)\Microsoft\Edge*" -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+    Remove-Item -Path "C:\Program Files\Microsoft\Edge*" -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+} catch {
+    Write-Host "WARN: Could not completely remove Edge: $_"
+}
+
 Write-Host "Debloat complete." -ForegroundColor Green

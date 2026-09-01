@@ -13,14 +13,14 @@ cpus     = 4
 memory   = 6144
 headless = false
 
-boot_command      = ["<spacebar><wait1s><spacebar><wait1s>FS0:\\efi\\boot\\bootaa64.efi<enter><wait2s><spacebar><wait1s><spacebar>"]
+boot_command      = ["<wait10s><wait10s>"]
 default_boot_wait = "15s"
 vbox_boot_wait    = "10s"
 winrm_timeout     = "2h"
 
 qemu_accelerator      = "hvf"
 qemu_use_pflash       = true
-qemu_disk_interface   = "virtio"
+qemu_disk_interface   = "virtio-scsi"
 qemu_vnc_bind_address = "127.0.0.1"
 
 parallels_guest_os_type = "win-11"

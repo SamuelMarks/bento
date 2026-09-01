@@ -18,6 +18,7 @@ try {
     $cleanMgrFlags = @(
         'BranchCache',
         'Delivery Optimization Files',
+        'Device Driver Packages',
         'Diagnostic Data Viewer Database Files',
         'Downloaded Program Files',
         'Internet Cache Files',
@@ -93,15 +94,14 @@ Write-Host 'Cleaning temporary, cache, and log files...'
     "$env:windir\Logs\*",
     "$env:windir\Panther\*",
     "$env:windir\WinSxS\ManifestCache\*",
-    "$env:windir\SoftwareDistribution\Download\*",
-    "$env:windir\SoftwareDistribution\DeliveryOptimization\*",
-    "$env:windir\SoftwareDistribution\DataStore\Logs\*",
-    "$env:windir\SoftwareDistribution\ScanFile\*",
+    "$env:windir\SoftwareDistribution\*",
     "$env:windir\Prefetch\*",
     "$env:windir\Minidump\*",
     "C:\Windows\MEMORY.DMP",
     "C:\Windows\System32\winevt\Logs\*",
     "C:\Windows\ServiceProfiles\LocalService\AppData\Local\FontCache\*",
+    "C:\Windows\Logs\CBS\*",
+    "C:\Windows\Logs\DISM\*",
     "C:\ProgramData\Microsoft\Windows\WER\ReportArchive\*",
     "C:\ProgramData\Microsoft\Windows\WER\ReportQueue\*",
     "C:\ProgramData\Microsoft\Windows\WER\Temp\*",
@@ -118,7 +118,9 @@ Write-Host 'Cleaning temporary, cache, and log files...'
     "C:\Users\*\AppData\Local\Temp\*",
     "C:\Users\*\AppData\Local\Microsoft\Edge\User Data\Default\Cache\*",
     "C:`$Recycle.Bin\*",
-    "C:\Windows.old"
+    "C:\Windows.old",
+    "$env:windir\Installer\`$PatchCache$`\*",
+    "C:\ProgramData\Microsoft\Windows Defender\Definition Updates\*"
 ) | ForEach-Object {
     if (Test-Path $_) {
         try {

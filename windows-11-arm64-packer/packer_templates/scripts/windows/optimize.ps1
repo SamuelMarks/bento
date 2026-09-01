@@ -33,6 +33,7 @@ Write-Host "Compressing static program and system directories using LZX..."
 @(
     "C:\Program Files",
     "C:\Program Files (x86)",
+    "C:\ProgramData",
     "C:\Windows\System32\DriverStore\FileRepository",
     "C:\Windows\System32\WindowsPowerShell",
     "C:\Windows\Microsoft.NET",

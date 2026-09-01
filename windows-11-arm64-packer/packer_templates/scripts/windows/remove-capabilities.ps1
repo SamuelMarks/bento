@@ -15,6 +15,9 @@ $patterns = @(
     'Hello.Face*'
     'Media.WindowsMediaPlayer*'
     'Microsoft.Windows.WordPad*'
+    'App.WirelessDisplay.Connect*'
+    'Microsoft.Windows.Wifi.Client*'
+    'Microsoft.Windows.Wired.Client*'
 )
 
 Write-Host "Removing unneeded Windows Capabilities..."
