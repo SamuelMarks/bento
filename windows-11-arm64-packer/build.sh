@@ -25,14 +25,18 @@ if [ -z "${ISO_DIR}" ]; then
 fi
 
 if [ -z "${BENTO_BUILD_FILES_DIR:-}" ]; then
-    if [ -d "/Volumes/TOSHIBA_EXT" ]; then
+    if [ -d "/Volumes/VagrantState" ]; then
+        BENTO_BUILD_FILES_DIR="/Volumes/VagrantState/build_files"
+    elif [ -d "/Volumes/TOSHIBA_EXT" ]; then
         BENTO_BUILD_FILES_DIR="/Volumes/TOSHIBA_EXT/vagrant/build_files"
     else
         BENTO_BUILD_FILES_DIR="${REPO_ROOT}/builds/build_files"
     fi
 fi
 if [ -z "${BENTO_BUILD_COMPLETE_DIR:-}" ]; then
-    if [ -d "/Volumes/TOSHIBA_EXT" ]; then
+    if [ -d "/Volumes/VagrantState" ]; then
+        BENTO_BUILD_COMPLETE_DIR="/Volumes/VagrantState/build_complete"
+    elif [ -d "/Volumes/TOSHIBA_EXT" ]; then
         BENTO_BUILD_COMPLETE_DIR="/Volumes/TOSHIBA_EXT/vagrant/build_complete"
     else
         BENTO_BUILD_COMPLETE_DIR="${REPO_ROOT}/builds/build_complete"
@@ -42,14 +46,13 @@ export BENTO_BUILD_FILES_DIR
 export BENTO_BUILD_COMPLETE_DIR
 mkdir -p "${BENTO_BUILD_FILES_DIR}" "${BENTO_BUILD_COMPLETE_DIR}"
 
-if [ -n "${TMPDIR:-}" ]; then
-    TEST_SOCK="${TMPDIR}/.packer_sock_test_$$"
-    if ! python3 -c "import socket, sys; s=socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); s.bind(sys.argv[1]); s.close()" "${TEST_SOCK}" 2>/dev/null; then
-        echo "==> Note: Current TMPDIR (${TMPDIR}) does not support UNIX domain sockets (e.g. ExFAT)."
-        echo "==> Directing Packer plugin IPC sockets to /tmp while keeping caches on external storage."
-        export TMPDIR="/tmp"
-    fi
-    rm -f "${TEST_SOCK}" 2>/dev/null || true
+if [ -d "/Volumes/VagrantState" ]; then
+    mkdir -p "/Volumes/VagrantState/tmp"
+    export TMPDIR="/Volumes/VagrantState/tmp"
+    export TMP="/Volumes/VagrantState/tmp"
+    export TEMP="/Volumes/VagrantState/tmp"
+    # Vagrant post-processor uses TMPDIR for zipping the final box tarball.
+    # We must keep TMPDIR on external storage to prevent filling up the main hard drive.
 fi
 
 export PACKER_CACHE_DIR="${PACKER_CACHE_DIR:-${ISO_DIR}/.packer_cache}"
@@ -82,7 +85,13 @@ if [ ! -f "${TARGET_OEM_ISO}" ]; then
 fi
 
 echo "==> Calculating SHA256 checksum for ${TARGET_ISO}..."
-ISO_CHECKSUM=$(shasum -a 256 "${TARGET_ISO}" | awk '{print $1}')
+if [ -f "${TARGET_ISO}.sha256" ]; then
+    ISO_CHECKSUM=$(cat "${TARGET_ISO}.sha256")
+    echo "==> Using cached checksum: ${ISO_CHECKSUM}"
+else
+    ISO_CHECKSUM=$(shasum -a 256 "${TARGET_ISO}" | awk '{print $1}')
+    echo "${ISO_CHECKSUM}" > "${TARGET_ISO}.sha256"
+fi
 
 echo "==> Building Windows 11 ARM64 Box with Packer..."
 echo "==> Main ISO URL: file://${TARGET_ISO}"

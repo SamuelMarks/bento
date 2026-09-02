@@ -110,22 +110,22 @@ qemu_efi_firmware_code = local.qemu_efi_boot ? (
   qemuargs = var.qemuargs == null ? (
     var.is_windows ? (
       var.os_arch == "aarch64" && var.win11_oem_iso != "" ? [
-        ["-device", "nvme,drive=drive0,serial=nvme-1"],
         ["-device", "qemu-xhci,id=usb_xhci"],
         ["-device", "usb-kbd"],
         ["-device", "usb-tablet"],
         ["-device", "ramfb"],
+        ["-serial", "unix:/tmp/qemu-serial.sock,server,nowait"],
         ["-blockdev", "driver=file,node-name=oem_cdrom_file,filename=${var.win11_oem_iso}"],
         ["-blockdev", "driver=raw,node-name=oem_cdrom,file=oem_cdrom_file"],
         ["-device", "usb-storage,bus=usb_xhci.0,drive=oem_cdrom,removable=on"],
         ["-device", "virtio-net-pci,netdev=user.0"],
         ["-boot", "menu=on"]
       ] : [
-        ["-device", "nvme,drive=drive0,serial=nvme-1"],
         ["-device", "qemu-xhci"],
         ["-device", "usb-kbd"],
         ["-device", "usb-tablet"],
         ["-device", "ramfb"],
+        ["-serial", "unix:/tmp/qemu-serial.sock,server,nowait"],
         ["-device", "virtio-net-pci,netdev=user.0"],
         ["-boot", "menu=on"]
       ]
