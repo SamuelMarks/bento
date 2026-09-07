@@ -86,8 +86,8 @@ locals {
   nix_execute_command = var.os_name == "freebsd" ? "echo 'vagrant' | {{.Vars}} su -m root -c 'sh -eux {{.Path}}'" : (
     var.os_name == "solaris" ? "echo 'vagrant'|sudo -S bash {{.Path}}" : "echo 'vagrant' | sudo -S {{ .Vars }} sh -eux '{{ .Path }}'"
   )
-  elevated_user     = "vagrant"
-  elevated_password = "vagrant"
+  elevated_user     = var.is_windows ? (var.winrm_username == "Administrator" ? null : var.winrm_username) : "vagrant"
+  elevated_password = var.is_windows ? (var.winrm_username == "Administrator" ? null : "vagrant") : "vagrant"
   source_names      = [for source in var.sources_enabled : trimprefix(source, "source.")]
 }
 
@@ -151,8 +151,22 @@ build {
   provisioner "powershell" {
     elevated_password = local.elevated_password
     elevated_user     = local.elevated_user
+    environment_vars  = ["PACKER_BUILDER_TYPE=${build.name}"]
     scripts = [
       "${path.root}/scripts/windows/provision.ps1",
+    ]
+    except = var.is_windows ? null : local.source_names
+  }
+  provisioner "windows-restart" {
+    restart_timeout = "30m"
+    except          = var.is_windows ? null : local.source_names
+  }
+  provisioner "powershell" {
+    elevated_password = local.elevated_password
+    elevated_user     = local.elevated_user
+    environment_vars  = ["PACKER_BUILDER_TYPE=${build.name}"]
+    pause_before      = "10s"
+    scripts = [
       "${path.root}/scripts/windows/remove-one-drive-and-teams.ps1",
       "${path.root}/scripts/windows/remove-apps.ps1",
       "${path.root}/scripts/windows/remove-capabilities.ps1",
@@ -174,15 +188,17 @@ build {
       "exclude:$_.InstallationBehavior.CanRequestUserInput",
       "include:$true",
     ]
-    except = var.is_windows ? null : local.source_names
+    except = var.is_windows && var.install_windows_updates ? null : local.source_names
   }
   provisioner "windows-restart" {
     restart_timeout = "30m"
-    except          = var.is_windows ? null : local.source_names
+    except          = var.is_windows && var.install_windows_updates ? null : local.source_names
   }
   provisioner "powershell" {
     elevated_password = local.elevated_password
     elevated_user     = local.elevated_user
+    environment_vars  = ["PACKER_BUILDER_TYPE=${build.name}"]
+    pause_before      = "10s"
     scripts           = local.scripts
     except            = var.is_windows ? null : local.source_names
   }
@@ -193,8 +209,26 @@ build {
   provisioner "powershell" {
     elevated_password = local.elevated_password
     elevated_user     = local.elevated_user
+    environment_vars  = ["PACKER_BUILDER_TYPE=${build.name}"]
+    pause_before      = "10s"
     scripts = [
+      "${path.root}/scripts/windows/debloat.ps1",
       "${path.root}/scripts/windows/cleanup.ps1",
+      "${path.root}/scripts/windows/auto_login.ps1"
+    ]
+    except = var.is_windows ? null : local.source_names
+  }
+  provisioner "windows-restart" {
+    restart_timeout = "30m"
+    except          = var.is_windows ? null : local.source_names
+  }
+  provisioner "powershell" {
+    elevated_password = local.elevated_password
+    elevated_user     = local.elevated_user
+    environment_vars  = ["PACKER_BUILDER_TYPE=${build.name}"]
+    pause_before      = "10s"
+    valid_exit_codes  = [0, 1]
+    scripts = [
       "${path.root}/scripts/windows/optimize.ps1"
     ]
     except = var.is_windows ? null : local.source_names
@@ -203,15 +237,24 @@ build {
   # Convert machines to vagrant boxes
   post-processor "vagrant" {
     compression_level = 9
-    output            = "${path.root}/../builds/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
+    output            = "${local.build_complete_dir}/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd.template" : null
     )
-    except = ["utm-iso.vm"]
+    except = ["utm-iso.vm", "qemu.vm"]
+  }
+  post-processor "vagrant" {
+    compression_level = 9
+    output            = "${local.build_complete_dir}/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
+    vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows.template" : (
+      var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd.template" : null
+    )
+    provider_override = "libvirt"
+    only = ["qemu.vm"]
   }
   post-processor "utm-vagrant" {
     compression_level = 9
-    output            = "${path.root}/../builds/build_complete/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
+    output            = "${local.build_complete_dir}/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows-utm.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd-utm.template" : "${path.root}/vagrantfile-utm.template"
     )
