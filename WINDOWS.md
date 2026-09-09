@@ -67,17 +67,17 @@ The generated Windows 11 box supports the complete Vagrant lifecycle:
 
 ## 3. Shared Folders
 
-### Libvirt / QEMU Provider
-- The default Linux `9p` shared folder driver used by `vagrant-libvirt` is **not** supported natively by the Windows NT kernel.
-- To prevent `vagrant up` mount failures, the box Vagrantfile template explicitly sets:
+### QEMU / Libvirt Provider
+- **Out-of-the-Box RSync Sharing**: The box bundles portable `rsync.exe` directly inside `C:\Windows\System32`, providing fast, reliable, unprivileged host-guest file synchronization:
   ```ruby
-  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
   ```
-- **Recommended Shared Folder Approach**: Use native Windows SMB sharing:
+  Synchronizes during `vagrant up`, and can be triggered on-demand via `vagrant rsync` or automatically in background via `vagrant rsync-auto`.
+- **Native SMB Sharing**: For bidirectional live network mount:
   ```ruby
-  config.vm.synced_folder ".", "/vagrant", type: "smb"
+  config.vm.synced_folder ".", "/vagrant", type: "smb", smb_host: "10.0.2.2"
   ```
-  Windows automatically mounts the host SMB export using its built-in `LanmanWorkstation` CIFS client.
+  Windows automatically mounts the host SMB export using its built-in `LanmanWorkstation` CIFS client (requires host file sharing privileges).
 
 ### VirtualBox Provider
 - VirtualBox Guest Additions shared folders (`vboxsf`) work out of the box:

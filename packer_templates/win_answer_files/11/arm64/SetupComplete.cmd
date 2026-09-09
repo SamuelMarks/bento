@@ -2,6 +2,19 @@
 :: Windows 11 Post-Setup Bootstrap Script (runs as NT AUTHORITY\SYSTEM)
 echo [WIN11-SETUPCOMPLETE] Starting SetupComplete bootstrap... > COM1
 
+:: Install VirtIO drivers from OEMDRV or attached media
+for %%d in (C D E F G H) do (
+    if exist %%d:\NetKVM\w11\ARM64\netkvm.inf (
+        echo [WIN11-SETUPCOMPLETE] Installing drivers from %%d: > COM1
+        pnputil.exe /add-driver %%d:\NetKVM\w11\ARM64\netkvm.inf /install
+        pnputil.exe /add-driver %%d:\viostor\w11\ARM64\viostor.inf /install
+        pnputil.exe /add-driver %%d:\vioscsi\w11\ARM64\vioscsi.inf /install
+        pnputil.exe /add-driver %%d:\Balloon\w11\ARM64\balloon.inf /install
+        pnputil.exe /add-driver %%d:\vioserial\w11\ARM64\vioser.inf /install
+        pnputil.exe /add-driver %%d:\viofs\w11\ARM64\viofs.inf /install
+    )
+)
+
 :: Ensure Administrator and vagrant accounts are enabled, in Administrators group, with password vagrant
 net.exe user Administrator /active:yes
 net.exe user Administrator vagrant

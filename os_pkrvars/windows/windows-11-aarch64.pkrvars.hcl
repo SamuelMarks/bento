@@ -18,7 +18,6 @@ qemu_boot_wait    = "2s"
 vbox_boot_wait    = "2s"
 winrm_timeout     = "2h"
 
-qemu_accelerator      = "hvf"
 qemu_use_pflash       = true
 qemu_disk_interface   = "virtio"
 qemu_net_device       = "virtio-net-pci"

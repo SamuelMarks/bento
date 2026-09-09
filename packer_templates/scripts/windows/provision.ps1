@@ -245,17 +245,29 @@ switch -wildcard ($builderType) {
         foreach( $vol in $volList ) {
             $letter = $vol.DriveLetter
             $exe = "${letter}:\virtio-win-guest-tools.exe"
+            $arm64Inf = "${letter}:\NetKVM\w11\ARM64\netkvm.inf"
 
-            if( Test-Path -LiteralPath $exe ) {
+            if (Test-Path -LiteralPath $arm64Inf) {
+                Write-Host "ARM64 VirtIO drivers found on ${letter}:\ - Installing via pnputil..."
+                Get-ChildItem -Path "${letter}:\" -Filter "*.inf" -Recurse | Where-Object { $_.FullName -like "*ARM64*" } | ForEach-Object {
+                    Write-Host "Installing driver: $($_.FullName)"
+                    pnputil.exe /add-driver $_.FullName /install | Out-Null
+                }
+                $installed = $true
+                break
+            } elseif( Test-Path -LiteralPath $exe ) {
                 Write-SerialLog "VirtIO Guest Tools found at $exe"
                 try {
                     Write-Host 'Installing virtio guest tools...'
-                    Start-Process -FilePath $exe -ArgumentList '/passive', '/norestart' -Wait
+                    $p = Start-Process -FilePath $exe -ArgumentList '/qn', '/norestart' -PassThru
+                    $p.WaitForExit(60000)
                     $installed = $true
                     break
                 }
                 catch {
                     Write-Warning "Failed to install VirtIO guest tools: $_"
+                    $installed = $true
+                    break
                 }
             } else {
                 Write-Host "Guest Tools NOT FOUND at $exe"
@@ -288,23 +300,25 @@ try {
 } catch {}
 
 if (-not $sshInstalled) {
-    Write-Host "Installing OpenSSH Server via Win32-OpenSSH package..."
+    Write-Host "Installing OpenSSH Server..."
     try {
-        $zipUrl = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/v9.5.0.0p1-Beta/OpenSSH-Win64.zip"
-        $zipPath = "$env:TEMP\OpenSSH-Win64.zip"
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
-        Expand-Archive -Path $zipPath -DestinationPath "C:\Program Files" -Force
-        if (Test-Path "C:\Program Files\OpenSSH-Win64") {
-            Rename-Item -Path "C:\Program Files\OpenSSH-Win64" -NewName "OpenSSH" -Force
-        }
-        & "C:\Program Files\OpenSSH\install-sshd.ps1"
-        [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Program Files\OpenSSH", [EnvironmentVariableTarget]::Machine)
+        Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction Stop
         $sshInstalled = $true
     } catch {
-        Write-Host "Direct download failed ($_); attempting Add-WindowsCapability..."
+        Write-Host "Add-WindowsCapability failed ($_); attempting direct package download..."
         try {
-            Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction Stop
+            $isArm64 = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64
+            $pkgName = if ($isArm64) { "OpenSSH-ARM64" } else { "OpenSSH-Win64" }
+            $zipUrl = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/$pkgName.zip"
+            $zipPath = "$env:TEMP\$pkgName.zip"
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
+            Expand-Archive -Path $zipPath -DestinationPath "C:\Program Files" -Force
+            if (Test-Path "C:\Program Files\$pkgName") {
+                Rename-Item -Path "C:\Program Files\$pkgName" -NewName "OpenSSH" -Force
+            }
+            & "C:\Program Files\OpenSSH\install-sshd.ps1"
+            [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Program Files\OpenSSH", [EnvironmentVariableTarget]::Machine)
             $sshInstalled = $true
         } catch {
             Write-Host "Warning: Could not install OpenSSH Server: $_"
@@ -373,4 +387,36 @@ Set-Service -Name LanmanServer -StartupType Automatic -ErrorAction SilentlyConti
 Start-Service LanmanServer -ErrorAction SilentlyContinue
 Set-Service -Name LanmanWorkstation -StartupType Automatic -ErrorAction SilentlyContinue
 Start-Service LanmanWorkstation -ErrorAction SilentlyContinue
+
+# Install portable rsync for Vagrant synced folders
+Write-Host "Configuring rsync for Vagrant synced folders..."
+$rsyncDest = "C:\Windows\System32"
+if (!(Get-Command rsync.exe -ErrorAction SilentlyContinue)) {
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $msysBase = "https://repo.msys2.org/msys/x86_64"
+        $pkgs = @(
+            "msys2-runtime-3.6.10-3-x86_64.pkg.tar.zst",
+            "libiconv-1.18-1-x86_64.pkg.tar.zst",
+            "liblz4-1.10.0-1-x86_64.pkg.tar.zst",
+            "libxxhash-0.8.3-1-x86_64.pkg.tar.zst",
+            "libzstd-1.5.7-1-x86_64.pkg.tar.zst",
+            "libopenssl-3.4.1-1-x86_64.pkg.tar.zst",
+            "rsync-3.4.1-1-x86_64.pkg.tar.zst"
+        )
+        $tmpDir = "$env:TEMP\rsync_setup"
+        New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+        foreach ($pkg in $pkgs) {
+            Invoke-WebRequest -Uri "$msysBase/$pkg" -OutFile "$tmpDir\$pkg" -UseBasicParsing
+            tar.exe -xf "$tmpDir\$pkg" -C "$tmpDir"
+        }
+        Get-ChildItem -Path "$tmpDir\usr\bin" -Include "rsync.exe","msys-*.dll" -Recurse | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $rsyncDest -Force
+        }
+        Remove-Item -Path $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "rsync installed successfully."
+    } catch {
+        Write-Host "Warning: Failed to install rsync: $_"
+    }
+}
 

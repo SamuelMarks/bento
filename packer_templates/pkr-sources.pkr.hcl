@@ -7,8 +7,10 @@ locals {
     )
   )
   host_arch_raw = var.host_arch != null && var.host_arch != "" ? var.host_arch : (
-    fileexists("/opt/homebrew/bin/brew") ? "arm64" : (
-      fileexists("/usr/local/bin/brew") ? "amd64" : (var.os_arch == "aarch64" ? "arm64" : "amd64")
+    fileexists("/opt/homebrew/bin/brew") || fileexists("/lib/ld-linux-aarch64.so.1") || fileexists("/usr/lib/aarch64-linux-gnu") ? "arm64" : (
+      fileexists("/usr/local/bin/brew") || fileexists("/lib64/ld-linux-x86-64.so.2") || fileexists("/usr/lib/x86_64-linux-gnu") ? "amd64" : (
+        var.os_arch == "aarch64" ? "arm64" : "amd64"
+      )
     )
   )
   host_arch = local.host_arch_raw == "arm64" ? "aarch64" : (local.host_arch_raw == "amd64" ? "x86_64" : local.host_arch_raw)
@@ -73,22 +75,106 @@ locals {
   ) : var.qemu_display
   qemu_efi_boot = var.qemu_efi_boot == null ? true : var.qemu_efi_boot
   qemu_efi_firmware_code = local.qemu_efi_boot ? (
-    var.qemu_efi_firmware_code == null ? (
-      local.host_os == "darwin" ? (
-        var.os_arch == "aarch64" ? "/opt/homebrew/share/qemu/edk2-aarch64-code.fd" : "/usr/local/share/qemu/edk2-x86_64-code.fd"
-        ) : (
-        var.os_arch == "aarch64" ? "/usr/local/share/qemu/edk2-aarch64-code.fd" : "/usr/local/share/qemu/edk2-x86_64-code.fd"
+    var.qemu_efi_firmware_code != null ? var.qemu_efi_firmware_code : (
+      var.os_arch == "aarch64" ? (
+        fileexists("/opt/homebrew/share/qemu/edk2-aarch64-code.fd") ? "/opt/homebrew/share/qemu/edk2-aarch64-code.fd" : (
+          fileexists("/usr/share/AAVMF/AAVMF_CODE.fd") ? "/usr/share/AAVMF/AAVMF_CODE.fd" : (
+            fileexists("/usr/share/AAVMF/AAVMF32_CODE.fd") ? "/usr/share/AAVMF/AAVMF32_CODE.fd" : (
+              fileexists("/usr/share/qemu/edk2-aarch64-code.fd") ? "/usr/share/qemu/edk2-aarch64-code.fd" : (
+                fileexists("/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw") ? "/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw" : (
+                  fileexists("/usr/share/edk2/aarch64/QEMU_EFI.fd") ? "/usr/share/edk2/aarch64/QEMU_EFI.fd" : (
+                    fileexists("/usr/share/edk2-armvirt/aarch64/QEMU_EFI.fd") ? "/usr/share/edk2-armvirt/aarch64/QEMU_EFI.fd" : (
+                      fileexists("/usr/local/share/qemu/edk2-aarch64-code.fd") ? "/usr/local/share/qemu/edk2-aarch64-code.fd" : (
+                        fileexists("/opt/local/share/qemu/edk2-aarch64-code.fd") ? "/opt/local/share/qemu/edk2-aarch64-code.fd" : (
+                          fileexists("C:/Program Files/qemu/share/edk2-aarch64-code.fd") ? "C:/Program Files/qemu/share/edk2-aarch64-code.fd" : (
+                            local.host_os == "darwin" ? "/opt/homebrew/share/qemu/edk2-aarch64-code.fd" : (
+                              local.host_os == "windows" ? "C:/Program Files/qemu/share/edk2-aarch64-code.fd" : "/usr/share/AAVMF/AAVMF_CODE.fd"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      ) : (
+        fileexists("/usr/share/OVMF/OVMF_CODE.fd") ? "/usr/share/OVMF/OVMF_CODE.fd" : (
+          fileexists("/usr/share/OVMF/OVMF_CODE_4M.fd") ? "/usr/share/OVMF/OVMF_CODE_4M.fd" : (
+            fileexists("/usr/share/ovmf/OVMF.fd") ? "/usr/share/ovmf/OVMF.fd" : (
+              fileexists("/usr/share/edk2/ovmf/OVMF_CODE.fd") ? "/usr/share/edk2/ovmf/OVMF_CODE.fd" : (
+                fileexists("/usr/share/edk2-ovmf/x64/OVMF_CODE.fd") ? "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd" : (
+                  fileexists("/opt/homebrew/share/qemu/edk2-x86_64-code.fd") ? "/opt/homebrew/share/qemu/edk2-x86_64-code.fd" : (
+                    fileexists("/usr/local/share/qemu/edk2-x86_64-code.fd") ? "/usr/local/share/qemu/edk2-x86_64-code.fd" : (
+                      fileexists("/opt/local/share/qemu/edk2-x86_64-code.fd") ? "/opt/local/share/qemu/edk2-x86_64-code.fd" : (
+                        fileexists("/usr/share/qemu/edk2-x86_64-code.fd") ? "/usr/share/qemu/edk2-x86_64-code.fd" : (
+                          fileexists("C:/Program Files/qemu/share/edk2-x86_64-code.fd") ? "C:/Program Files/qemu/share/edk2-x86_64-code.fd" : (
+                            local.host_os == "darwin" ? "/opt/homebrew/share/qemu/edk2-x86_64-code.fd" : (
+                              local.host_os == "windows" ? "C:/Program Files/qemu/share/edk2-x86_64-code.fd" : "/usr/share/OVMF/OVMF_CODE.fd"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
       )
-    ) : var.qemu_efi_firmware_code
+    )
   ) : null
   qemu_efi_firmware_vars = local.qemu_efi_boot ? (
-    var.qemu_efi_firmware_vars == null ? (
-      local.host_os == "darwin" ? (
-        var.os_arch == "aarch64" ? "/opt/homebrew/share/qemu/edk2-arm-vars.fd" : "/usr/local/share/qemu/edk2-i386-vars.fd"
-        ) : (
-        var.os_arch == "aarch64" ? "/usr/local/share/qemu/edk2-arm-vars.fd" : "/usr/local/share/qemu/edk2-i386-vars.fd"
+    var.qemu_efi_firmware_vars != null ? var.qemu_efi_firmware_vars : (
+      var.os_arch == "aarch64" ? (
+        fileexists("/opt/homebrew/share/qemu/edk2-arm-vars.fd") ? "/opt/homebrew/share/qemu/edk2-arm-vars.fd" : (
+          fileexists("/usr/share/AAVMF/AAVMF_VARS.fd") ? "/usr/share/AAVMF/AAVMF_VARS.fd" : (
+            fileexists("/usr/share/qemu/edk2-arm-vars.fd") ? "/usr/share/qemu/edk2-arm-vars.fd" : (
+              fileexists("/usr/share/edk2/aarch64/vars-template-pflash.raw") ? "/usr/share/edk2/aarch64/vars-template-pflash.raw" : (
+                fileexists("/usr/share/edk2-armvirt/aarch64/QEMU_VARS.fd") ? "/usr/share/edk2-armvirt/aarch64/QEMU_VARS.fd" : (
+                  fileexists("/usr/local/share/qemu/edk2-arm-vars.fd") ? "/usr/local/share/qemu/edk2-arm-vars.fd" : (
+                    fileexists("/opt/local/share/qemu/edk2-arm-vars.fd") ? "/opt/local/share/qemu/edk2-arm-vars.fd" : (
+                      fileexists("C:/Program Files/qemu/share/edk2-arm-vars.fd") ? "C:/Program Files/qemu/share/edk2-arm-vars.fd" : (
+                        local.host_os == "darwin" ? "/opt/homebrew/share/qemu/edk2-arm-vars.fd" : (
+                          local.host_os == "windows" ? "C:/Program Files/qemu/share/edk2-arm-vars.fd" : "/usr/share/AAVMF/AAVMF_VARS.fd"
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      ) : (
+        fileexists("/usr/share/OVMF/OVMF_VARS.fd") ? "/usr/share/OVMF/OVMF_VARS.fd" : (
+          fileexists("/usr/share/OVMF/OVMF_VARS_4M.fd") ? "/usr/share/OVMF/OVMF_VARS_4M.fd" : (
+            fileexists("/usr/share/ovmf/OVMF_VARS.fd") ? "/usr/share/ovmf/OVMF_VARS.fd" : (
+              fileexists("/usr/share/edk2/ovmf/OVMF_VARS.fd") ? "/usr/share/edk2/ovmf/OVMF_VARS.fd" : (
+                fileexists("/usr/share/edk2-ovmf/x64/OVMF_VARS.fd") ? "/usr/share/edk2-ovmf/x64/OVMF_VARS.fd" : (
+                  fileexists("/opt/homebrew/share/qemu/edk2-i386-vars.fd") ? "/opt/homebrew/share/qemu/edk2-i386-vars.fd" : (
+                    fileexists("/usr/local/share/qemu/edk2-i386-vars.fd") ? "/usr/local/share/qemu/edk2-i386-vars.fd" : (
+                      fileexists("/opt/local/share/qemu/edk2-i386-vars.fd") ? "/opt/local/share/qemu/edk2-i386-vars.fd" : (
+                        fileexists("/usr/share/qemu/edk2-i386-vars.fd") ? "/usr/share/qemu/edk2-i386-vars.fd" : (
+                          fileexists("C:/Program Files/qemu/share/edk2-i386-vars.fd") ? "C:/Program Files/qemu/share/edk2-i386-vars.fd" : (
+                            local.host_os == "darwin" ? "/opt/homebrew/share/qemu/edk2-i386-vars.fd" : (
+                              local.host_os == "windows" ? "C:/Program Files/qemu/share/edk2-i386-vars.fd" : "/usr/share/OVMF/OVMF_VARS.fd"
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
       )
-    ) : var.qemu_efi_firmware_vars
+    )
   ) : null
   qemu_machine_type = var.qemu_machine_type == null ? (
     var.os_arch == "aarch64" ? "virt" : "q35"
@@ -114,23 +200,41 @@ locals {
         ["-boot", "strict=off"],
         ["-serial", "file:${path.root}/../serial.log"],
       ] : (
-        var.os_arch == "aarch64" ? [
-          ["-device", "qemu-xhci"],
-          ["-device", "usb-kbd"],
-          ["-device", "usb-tablet"],
-          ["-device", "ramfb"],
-          ["-boot", "strict=off"],
-          ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
-          ["-serial", "chardev:ser0"],
-        ] : [
-          ["-device", "qemu-xhci"],
-          ["-device", "usb-kbd"],
-          ["-device", "usb-tablet"],
-          ["-vga", "std"],
-          ["-boot", "strict=off"],
-          ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
-          ["-serial", "chardev:ser0"],
-        ]
+        var.os_arch == "aarch64" ? (
+          local.host_os == "windows" ? [
+            ["-device", "qemu-xhci"],
+            ["-device", "usb-kbd"],
+            ["-device", "usb-tablet"],
+            ["-device", "ramfb"],
+            ["-boot", "strict=off"],
+            ["-serial", "file:${path.root}/../serial.log"],
+          ] : [
+            ["-device", "qemu-xhci"],
+            ["-device", "usb-kbd"],
+            ["-device", "usb-tablet"],
+            ["-device", "ramfb"],
+            ["-boot", "strict=off"],
+            ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
+            ["-serial", "chardev:ser0"],
+          ]
+        ) : (
+          local.host_os == "windows" ? [
+            ["-device", "qemu-xhci"],
+            ["-device", "usb-kbd"],
+            ["-device", "usb-tablet"],
+            ["-vga", "std"],
+            ["-boot", "strict=off"],
+            ["-serial", "file:${path.root}/../serial.log"],
+          ] : [
+            ["-device", "qemu-xhci"],
+            ["-device", "usb-kbd"],
+            ["-device", "usb-tablet"],
+            ["-vga", "std"],
+            ["-boot", "strict=off"],
+            ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
+            ["-serial", "chardev:ser0"],
+          ]
+        )
       )
     ) : [
       ["-device", "virtio-gpu-pci"],
@@ -206,7 +310,7 @@ locals {
         ["modifyvm", "{{.Name}}", "--mouse", "usb"],
         ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
         ["modifyvm", "{{.Name}}", "--uart1", "0x3f8", "4"],
-        ["modifyvm", "{{.Name}}", "--uartmode1", "server", "/tmp/windows-11-serial.sock"],
+        ["modifyvm", "{{.Name}}", "--uartmode1", local.host_os == "windows" ? "file" : "server", local.host_os == "windows" ? "${path.root}/../serial.log" : "/tmp/windows-11-serial.sock"],
       ]
       ) : (
       var.os_arch == "aarch64" ? [

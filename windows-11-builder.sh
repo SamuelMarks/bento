@@ -32,6 +32,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
+# Load .env if present
+if [ -f "${SCRIPT_DIR}/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . "${SCRIPT_DIR}/.env"
+  set +a
+fi
+
 # ANSI Colors
 C_RESET="\033[0m"
 C_BOLD="\033[1m"
@@ -46,6 +54,7 @@ log_info()    { echo -e "${C_CYAN}${C_BOLD}==> [INFO]${C_RESET} $*"; }
 log_success() { echo -e "${C_GREEN}${C_BOLD}==> [SUCCESS]${C_RESET} $*"; }
 log_warn()    { echo -e "${C_YELLOW}${C_BOLD}==> [WARN]${C_RESET} $*"; }
 log_error()   { echo -e "${C_RED}${C_BOLD}==> [ERROR]${C_RESET} $*" >&2; }
+get_file_size() { stat -f %z "$1" 2>/dev/null || stat -c %s "$1" 2>/dev/null || wc -c < "$1" | tr -d ' '; }
 
 # Default Parameters
 COMMAND="build"
@@ -77,8 +86,9 @@ VM_MEM="6144"
 VM_CPUS="4"
 VM_VNC=""
 CUSTOM_ISO=""
-SERIAL_SOCK="/tmp/windows-11-serial.sock"
-SERIAL_CLIENT_SOCK="/tmp/windows-11-serial-client.sock"
+TMP_DIR="${TMPDIR:-/tmp}"
+SERIAL_SOCK="${TMP_DIR}/windows-11-serial.sock"
+SERIAL_CLIENT_SOCK="${TMP_DIR}/windows-11-serial-client.sock"
 SERIAL_LOG="${SCRIPT_DIR}/serial.log"
 PROXY_SCRIPT="${SCRIPT_DIR}/serial_proxy.py"
 
@@ -159,23 +169,37 @@ find_iso() {
     echo "${CUSTOM_ISO}"
     return 0
   fi
-  # Check local builds/iso first
-  local local_iso
-  local_iso=$(find "${SCRIPT_DIR}/builds/iso" -maxdepth 1 -name "windows-11-${ARCH}*.iso" 2>/dev/null | head -n 1)
-  if [ -n "${local_iso}" ] && [ -f "${local_iso}" ]; then
-    echo "${local_iso}"
+  if [ -n "${WIN11_TARGET_ISO:-}" ] && [ -f "${WIN11_TARGET_ISO}" ]; then
+    echo "${WIN11_TARGET_ISO}"
     return 0
   fi
-  local_iso=$(find "${SCRIPT_DIR}/builds/iso" -maxdepth 1 -name "*win*11*${ARCH}*.iso" 2>/dev/null | head -n 1)
-  if [ -n "${local_iso}" ] && [ -f "${local_iso}" ]; then
-    echo "${local_iso}"
+  if [ -n "${WIN11_ISO_PATH:-}" ] && [ -f "${WIN11_ISO_PATH}" ]; then
+    echo "${WIN11_ISO_PATH}"
     return 0
   fi
-  local_iso=$(find "${SCRIPT_DIR}/builds/iso" -maxdepth 1 -name "*windows-11*.iso" 2>/dev/null | head -n 1)
-  if [ -n "${local_iso}" ] && [ -f "${local_iso}" ]; then
-    echo "${local_iso}"
-    return 0
+  local search_dirs=()
+  if [ -n "${ISO_DIR:-}" ] && [ -d "${ISO_DIR}" ]; then
+    search_dirs+=("${ISO_DIR}")
   fi
+  search_dirs+=("${SCRIPT_DIR}/builds/iso")
+  for sdir in "${search_dirs[@]}"; do
+    local local_iso
+    local_iso=$(find "${sdir}" -maxdepth 1 -name "windows-11-${ARCH}*.iso" 2>/dev/null | head -n 1)
+    if [ -n "${local_iso}" ] && [ -f "${local_iso}" ]; then
+      echo "${local_iso}"
+      return 0
+    fi
+    local_iso=$(find "${sdir}" -maxdepth 1 \( -name "*win*11*${ARCH}*.iso" -o -name "*Win*11*${ARCH}*.iso" -o -name "*Win*11*Arm64*.iso" -o -name "*Win11*${ARCH}*.iso" -o -name "*Win11*Arm64*.iso" \) 2>/dev/null | head -n 1)
+    if [ -n "${local_iso}" ] && [ -f "${local_iso}" ]; then
+      echo "${local_iso}"
+      return 0
+    fi
+    local_iso=$(find "${sdir}" -maxdepth 1 -name "*windows-11*.iso" 2>/dev/null | head -n 1)
+    if [ -n "${local_iso}" ] && [ -f "${local_iso}" ]; then
+      echo "${local_iso}"
+      return 0
+    fi
+  done
   echo ""
 }
 
@@ -424,7 +448,7 @@ cmd_status() {
       local dsz
       dsz=$(du -h "$d" | cut -f1)
       local dbytes
-      dbytes=$(stat -c %s "$d")
+      dbytes=$(get_file_size "$d")
       echo -e "  - $(basename "$(dirname "$d")")/$(basename "$d") : ${C_CYAN}${dsz}${C_RESET} (${dbytes} bytes)"
       found_disks=1
     fi
@@ -444,7 +468,7 @@ cmd_status() {
       local bsz
       bsz=$(du -h "$b" | cut -f1)
       local bsz_bytes
-      bsz_bytes=$(stat -c %s "$b")
+      bsz_bytes=$(get_file_size "$b")
       echo -e "  - $(basename "$b") : ${C_GREEN}${C_BOLD}${bsz}${C_RESET} (${bsz_bytes} bytes)"
     done
   else
@@ -490,38 +514,87 @@ cmd_run() {
   fi
 
   # Find UEFI firmware code and vars
+  local brew_prefix=""
+  if command -v brew >/dev/null 2>&1; then
+    brew_prefix="$(brew --prefix 2>/dev/null)"
+  fi
+
   local efi_code=""
   local efi_vars=""
   if [ "${ARCH}" = "x86_64" ]; then
     local efi_candidates=(
-      "/usr/local/share/qemu/edk2-x86_64-code.fd"
+      "${QEMU_EDK2_CODE:-}"
+      "${QEMU_BIOS:-}"
       "/usr/share/OVMF/OVMF_CODE.fd"
+      "/usr/share/OVMF/OVMF_CODE_4M.fd"
       "/usr/share/ovmf/OVMF.fd"
+      "/usr/share/edk2/ovmf/OVMF_CODE.fd"
+      "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd"
+      ${brew_prefix:+"${brew_prefix}/share/qemu/edk2-x86_64-code.fd"}
+      "/opt/homebrew/share/qemu/edk2-x86_64-code.fd"
+      "/usr/local/share/qemu/edk2-x86_64-code.fd"
+      "/opt/local/share/qemu/edk2-x86_64-code.fd"
+      "/usr/share/qemu/edk2-x86_64-code.fd"
+      "/usr/share/qemu/OVMF.fd"
+      "C:/Program Files/qemu/share/edk2-x86_64-code.fd"
+      "C:/msys64/mingw64/share/qemu/edk2-x86_64-code.fd"
     )
     for c in "${efi_candidates[@]}"; do
-      if [ -f "$c" ]; then efi_code="$c"; break; fi
+      if [ -n "$c" ] && [ -f "$c" ]; then efi_code="$c"; break; fi
     done
     local var_candidates=(
-      "/usr/local/share/qemu/edk2-i386-vars.fd"
+      "${QEMU_EDK2_VARS:-}"
       "/usr/share/OVMF/OVMF_VARS.fd"
+      "/usr/share/OVMF/OVMF_VARS_4M.fd"
+      "/usr/share/ovmf/OVMF_VARS.fd"
+      "/usr/share/edk2/ovmf/OVMF_VARS.fd"
+      "/usr/share/edk2-ovmf/x64/OVMF_VARS.fd"
+      ${brew_prefix:+"${brew_prefix}/share/qemu/edk2-i386-vars.fd"}
+      "/opt/homebrew/share/qemu/edk2-i386-vars.fd"
+      "/usr/local/share/qemu/edk2-i386-vars.fd"
+      "/opt/local/share/qemu/edk2-i386-vars.fd"
+      "/usr/share/qemu/edk2-i386-vars.fd"
+      "C:/Program Files/qemu/share/edk2-i386-vars.fd"
+      "C:/msys64/mingw64/share/qemu/edk2-i386-vars.fd"
     )
     for v in "${var_candidates[@]}"; do
-      if [ -f "$v" ]; then efi_vars="$v"; break; fi
+      if [ -n "$v" ] && [ -f "$v" ]; then efi_vars="$v"; break; fi
     done
   else
     local efi_candidates=(
-      "/usr/local/share/qemu/edk2-aarch64-code.fd"
+      "${QEMU_EDK2_CODE:-}"
+      "${QEMU_BIOS:-}"
+      ${brew_prefix:+"${brew_prefix}/share/qemu/edk2-aarch64-code.fd"}
+      "/opt/homebrew/share/qemu/edk2-aarch64-code.fd"
       "/usr/share/AAVMF/AAVMF_CODE.fd"
+      "/usr/share/AAVMF/AAVMF32_CODE.fd"
+      "/usr/share/qemu/edk2-aarch64-code.fd"
+      "/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw"
+      "/usr/share/edk2/aarch64/QEMU_EFI.fd"
+      "/usr/share/edk2-armvirt/aarch64/QEMU_EFI.fd"
+      "/usr/local/share/qemu/edk2-aarch64-code.fd"
+      "/opt/local/share/qemu/edk2-aarch64-code.fd"
+      "C:/Program Files/qemu/share/edk2-aarch64-code.fd"
+      "C:/msys64/mingw64/share/qemu/edk2-aarch64-code.fd"
     )
     for c in "${efi_candidates[@]}"; do
-      if [ -f "$c" ]; then efi_code="$c"; break; fi
+      if [ -n "$c" ] && [ -f "$c" ]; then efi_code="$c"; break; fi
     done
     local var_candidates=(
-      "/usr/local/share/qemu/edk2-arm-vars.fd"
+      "${QEMU_EDK2_VARS:-}"
+      ${brew_prefix:+"${brew_prefix}/share/qemu/edk2-arm-vars.fd"}
+      "/opt/homebrew/share/qemu/edk2-arm-vars.fd"
       "/usr/share/AAVMF/AAVMF_VARS.fd"
+      "/usr/share/qemu/edk2-arm-vars.fd"
+      "/usr/share/edk2/aarch64/vars-template-pflash.raw"
+      "/usr/share/edk2-armvirt/aarch64/QEMU_VARS.fd"
+      "/usr/local/share/qemu/edk2-arm-vars.fd"
+      "/opt/local/share/qemu/edk2-arm-vars.fd"
+      "C:/Program Files/qemu/share/edk2-arm-vars.fd"
+      "C:/msys64/mingw64/share/qemu/edk2-arm-vars.fd"
     )
     for v in "${var_candidates[@]}"; do
-      if [ -f "$v" ]; then efi_vars="$v"; break; fi
+      if [ -n "$v" ] && [ -f "$v" ]; then efi_vars="$v"; break; fi
     done
   fi
 
@@ -542,10 +615,29 @@ cmd_run() {
 
   echo -e "${C_GREEN}${C_BOLD}VM is starting. In another terminal, run './windows-11-builder.sh serial' to connect.${C_RESET}"
 
+  local host_os="linux"
+  case "$(uname -s)" in
+    Darwin*) host_os="darwin" ;;
+    Linux*)  host_os="linux" ;;
+    CYGWIN*|MINGW*|MSYS*) host_os="windows" ;;
+  esac
+
+  local qemu_accel="kvm"
+  if [ "${host_os}" = "darwin" ]; then
+    qemu_accel="hvf"
+  elif [ "${host_os}" = "windows" ]; then
+    qemu_accel="whpx"
+  fi
+
+  local qemu_mach="q35,accel=${qemu_accel}"
+  if [ "${ARCH}" = "aarch64" ]; then
+    qemu_mach="virt,highmem=on,accel=${qemu_accel}"
+  fi
+
   local qemu_cmd=(
     "qemu-system-${ARCH}"
     "-name" "windows-11-${ARCH}"
-    "-machine" "q35,accel=kvm"
+    "-machine" "${qemu_mach}"
     "-cpu" "host"
     "-smp" "${VM_CPUS}"
     "-m" "${VM_MEM}"
@@ -567,16 +659,29 @@ cmd_run() {
     qemu_cmd+=("-drive" "if=pflash,format=raw,file=${run_vars}")
   fi
 
-  qemu_cmd+=(
-    "-drive" "file=${disk_img},if=none,id=disk0,cache=writeback,discard=unmap"
-    "-device" "ide-hd,drive=disk0,bus=ide.0"
-    "-netdev" "user,id=user.0,hostfwd=tcp::5985-:5985,hostfwd=tcp::3389-:3389,hostfwd=tcp::2222-:22"
-    "-device" "virtio-net-pci,netdev=user.0"
-    "-device" "qemu-xhci"
-    "-device" "usb-kbd"
-    "-device" "usb-tablet"
-    "-vga" "std"
-  )
+  if [ "${ARCH}" = "aarch64" ]; then
+    qemu_cmd+=(
+      "-drive" "file=${disk_img},if=none,id=disk0,cache=writeback,discard=unmap"
+      "-device" "nvme,serial=nvme0,drive=disk0"
+      "-netdev" "user,id=user.0,hostfwd=tcp::5985-:5985,hostfwd=tcp::3389-:3389,hostfwd=tcp::2222-:22"
+      "-device" "virtio-net-pci,netdev=user.0"
+      "-device" "qemu-xhci"
+      "-device" "usb-kbd"
+      "-device" "usb-tablet"
+      "-device" "ramfb"
+    )
+  else
+    qemu_cmd+=(
+      "-drive" "file=${disk_img},if=none,id=disk0,cache=writeback,discard=unmap"
+      "-device" "ide-hd,drive=disk0,bus=ide.0"
+      "-netdev" "user,id=user.0,hostfwd=tcp::5985-:5985,hostfwd=tcp::3389-:3389,hostfwd=tcp::2222-:22"
+      "-device" "virtio-net-pci,netdev=user.0"
+      "-device" "qemu-xhci"
+      "-device" "usb-kbd"
+      "-device" "usb-tablet"
+      "-vga" "std"
+    )
+  fi
 
   if [ -n "${VM_VNC}" ]; then
     qemu_cmd+=("-vnc" ":${VM_VNC}")
@@ -600,8 +705,9 @@ cmd_box() {
   log_info "  AGGRESSIVE VAGRANT .BOX SIZE REDUCTION PIPELINE (${ARCH}, ${provider})"
   log_info "================================================================"
 
-  local build_files_dir="${SCRIPT_DIR}/builds/build_files/packer-windows-11-${ARCH}-${provider}"
-  local complete_dir="${SCRIPT_DIR}/builds/build_complete"
+  local base_files_dir="${BENTO_BUILD_FILES_DIR:-${SCRIPT_DIR}/builds/build_files}"
+  local build_files_dir="${base_files_dir}/packer-windows-11-${ARCH}-${provider}"
+  local complete_dir="${BENTO_BUILD_COMPLETE_DIR:-${SCRIPT_DIR}/builds/build_complete}"
   mkdir -p "${complete_dir}"
 
   local box_name="windows-11-${ARCH}.${provider}.box"
@@ -629,7 +735,10 @@ cmd_box() {
       if [ -n "${existing_box}" ]; then
         log_info "Extracting disk image from existing box (${existing_box}) for optimization..."
         mkdir -p "${build_files_dir}"
-        tar -xf "${existing_box}" -C "${build_files_dir}" box.img 2>/dev/null || true
+        tar -xf "${existing_box}" -C "${build_files_dir}" box_0.img 2>/dev/null || tar -xf "${existing_box}" -C "${build_files_dir}" box.img 2>/dev/null || true
+        if [ -f "${build_files_dir}/box_0.img" ]; then
+          mv -f "${build_files_dir}/box_0.img" "${build_files_dir}/box.img"
+        fi
         if [ -f "${build_files_dir}/box.img" ]; then
           src_img="${build_files_dir}/box.img"
         fi
@@ -642,7 +751,7 @@ cmd_box() {
     fi
 
     local orig_bytes
-    orig_bytes=$(stat -c %s "${src_img}")
+    orig_bytes=$(get_file_size "${src_img}")
     local orig_mb=$((orig_bytes / 1024 / 1024))
     log_info "Step 1: Input disk image: ${src_img}"
     log_info "        Original disk image size: ${orig_mb} MB ($((orig_mb / 1024)) GB)"
@@ -658,7 +767,7 @@ cmd_box() {
     qemu-img convert -p -m 16 -W -O qcow2 -c -S 4k "${src_img}" "${opt_img}"
 
     local opt_bytes
-    opt_bytes=$(stat -c %s "${opt_img}")
+    opt_bytes=$(get_file_size "${opt_img}")
     local opt_mb=$((opt_bytes / 1024 / 1024))
     local saved_mb=$((orig_mb - opt_mb))
     log_success "Compressed disk image size: ${opt_mb} MB (Direct disk savings: ${saved_mb} MB)"
@@ -669,10 +778,15 @@ cmd_box() {
     virt_gb=$(qemu-img info --output=json "${src_img}" | python3 -c "import sys, json; print(int(json.load(sys.stdin).get('virtual-size', 68719476736) / (1024**3)))" 2>/dev/null || echo "64")
 
     # Step 3: Generate Vagrant metadata and template
-    log_info "Step 3: Generating Vagrant metadata (virtual_size: ${virt_gb} GB) and Vagrantfile template..."
+    # vagrant-qemu uses box_format: "libvirt" (v1 format)
+    local meta_provider="${provider}"
+    if [ "${provider}" = "qemu" ]; then
+      meta_provider="libvirt"
+    fi
+    log_info "Step 3: Generating Vagrant metadata (${meta_provider}, virtual_size: ${virt_gb} GB) and Vagrantfile template..."
     cat << EOF > "${build_files_dir}/metadata.json"
 {
-  "provider": "libvirt",
+  "provider": "${meta_provider}",
   "format": "qcow2",
   "virtual_size": ${virt_gb}
 }
@@ -688,14 +802,16 @@ Vagrant.configure("2") do |config|
   config.winrm.retry_limit = 30
   config.winrm.retry_delay = 10
   config.ssh.username = "vagrant"
-  config.ssh.password = "vagrant"
+  config.ssh.insert_key = false
+  config.ssh.private_key_path = File.expand_path("~/.vagrant.d/insecure_private_key")
+  config.ssh.shell = "powershell"
 
   config.vm.network :forwarded_port, guest: 22, host: 2222, id: 'ssh', auto_correct: true
   config.vm.network :forwarded_port, guest: 3389, host: 3389, id: 'rdp', auto_correct: true
   config.vm.network :forwarded_port, guest: 5985, host: 5985, id: 'winrm', auto_correct: true
 
-  # On Windows with libvirt, 9p is not natively supported. Synced folder is disabled by default unless SMB/rsync is configured.
-  config.vm.synced_folder ".", "/vagrant", disabled: true
+  # Synced folder: rsync works without host privileges or password prompts
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
 
   config.vm.provider :libvirt do |lv|
     lv.cpus = 4
@@ -704,6 +820,91 @@ Vagrant.configure("2") do |config|
     lv.nic_model_type = "virtio"
     lv.driver = "kvm"
   end
+
+  is_darwin = /darwin/ =~ RUBY_PLATFORM
+  is_windows = /mswin|mingw|cygwin/ =~ RUBY_PLATFORM
+  accel = is_darwin ? "hvf" : (is_windows ? "whpx" : "kvm")
+
+  host_cpu = (RbConfig::CONFIG["host_cpu"] || RUBY_PLATFORM).downcase
+  is_arm = host_cpu =~ /aarch64|arm64/
+
+  config.vm.provider :qemu do |qe|
+    if is_arm
+      qe.arch = "aarch64"
+      qe.machine = "virt,highmem=on,accel=#{accel}"
+      qe.cpu = "host"
+      qe.smp = "4"
+      qe.memory = "4096M"
+      qe.firmware_format = nil
+      qe.drive_interface = "none"
+      qe.net_device = "virtio-net-pci"
+      qe.ssh_auto_correct = true
+
+      bios_candidates = [
+        ENV["QEMU_EDK2_PATH"],
+        ENV["QEMU_BIOS"],
+        "/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
+        "/usr/share/AAVMF/AAVMF_CODE.fd",
+        "/usr/share/AAVMF/AAVMF32_CODE.fd",
+        "/usr/share/qemu/edk2-aarch64-code.fd",
+        "/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw",
+        "/usr/share/edk2/aarch64/QEMU_EFI.fd",
+        "/usr/share/edk2-armvirt/aarch64/QEMU_EFI.fd",
+        "/usr/local/share/qemu/edk2-aarch64-code.fd",
+        "/opt/local/share/qemu/edk2-aarch64-code.fd",
+        "C:/Program Files/qemu/share/edk2-aarch64-code.fd",
+        "C:/msys64/mingw64/share/qemu/edk2-aarch64-code.fd"
+      ].compact
+      bios_path = bios_candidates.find { |path| File.exist?(path) }
+
+      extra_args = []
+      extra_args.push("-bios", bios_path) if bios_path
+      extra_args.push(
+        "-device", "nvme,serial=nvme0,drive=disk0",
+        "-device", "ramfb",
+        "-device", "qemu-xhci",
+        "-device", "usb-kbd",
+        "-device", "usb-tablet"
+      )
+      qe.extra_qemu_args = extra_args
+    else
+      qe.arch = "x86_64"
+      qe.machine = "q35,accel=#{accel}"
+      qe.cpu = "host"
+      qe.smp = "4"
+      qe.memory = "4096M"
+      qe.drive_interface = "ide"
+      qe.net_device = "virtio-net-pci"
+      qe.ssh_auto_correct = true
+
+      ovmf_candidates = [
+        ENV["QEMU_EDK2_PATH"],
+        ENV["QEMU_BIOS"],
+        "/usr/share/OVMF/OVMF_CODE.fd",
+        "/usr/share/OVMF/OVMF_CODE_4M.fd",
+        "/usr/share/ovmf/OVMF.fd",
+        "/usr/share/edk2/ovmf/OVMF_CODE.fd",
+        "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd",
+        "/opt/homebrew/share/qemu/edk2-x86_64-code.fd",
+        "/usr/local/share/qemu/edk2-x86_64-code.fd",
+        "/opt/local/share/qemu/edk2-x86_64-code.fd",
+        "/usr/share/qemu/edk2-x86_64-code.fd",
+        "C:/Program Files/qemu/share/edk2-x86_64-code.fd",
+        "C:/msys64/mingw64/share/qemu/edk2-x86_64-code.fd"
+      ].compact
+      ovmf_path = ovmf_candidates.find { |path| File.exist?(path) }
+
+      extra_args = []
+      extra_args.push("-bios", ovmf_path) if ovmf_path
+      extra_args.push(
+        "-device", "qemu-xhci",
+        "-device", "usb-kbd",
+        "-device", "usb-tablet",
+        "-vga", "std"
+      )
+      qe.extra_qemu_args = extra_args
+    end
+  end
 end
 EOF
 
@@ -711,17 +912,25 @@ EOF
     log_info "Step 4: Compacting into .box with sparse block preservation & level-9 compression..."
     local tmp_box="${target_box}.tmp"
 
+    local tar_cmd="tar"
+    local tar_sparse="--sparse"
+    if command -v gtar >/dev/null 2>&1; then
+      tar_cmd="gtar"
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      tar_sparse=""
+    fi
+
     if command -v pigz >/dev/null 2>&1; then
       log_info "Using parallel pigz for maximum compression (-9) across all CPU cores..."
       (
         cd "${build_files_dir}"
-        tar --sparse -I 'pigz -9' -cf "${tmp_box}" metadata.json Vagrantfile box.img
+        ${tar_cmd} ${tar_sparse} -I 'pigz -9' -cf "${tmp_box}" metadata.json Vagrantfile box.img
       )
     else
       log_info "Using gzip -9 for maximum compression..."
       (
         cd "${build_files_dir}"
-        GZIP="-9" tar --sparse -czf "${tmp_box}" metadata.json Vagrantfile box.img
+        GZIP="-9" ${tar_cmd} ${tar_sparse} -czf "${tmp_box}" metadata.json Vagrantfile box.img
       )
     fi
 
@@ -734,7 +943,7 @@ EOF
     fi
 
     local box_bytes
-    box_bytes=$(stat -c %s "${target_box}")
+    box_bytes=$(get_file_size "${target_box}")
     local box_mb=$((box_bytes / 1024 / 1024))
     local total_saved_mb=$((orig_mb - box_mb))
 
@@ -772,7 +981,7 @@ EOF
     fi
     mv -f "${tmp_box}" "${target_box}"
     local box_bytes
-    box_bytes=$(stat -c %s "${target_box}")
+    box_bytes=$(get_file_size "${target_box}")
     log_success "Created optimized box: ${target_box} ($((box_bytes / 1024 / 1024)) MB)"
   fi
 }
@@ -815,14 +1024,28 @@ cmd_build() {
     exit 1
   fi
 
+  if [ "${ARCH}" = "aarch64" ] && [ "${PROVIDER}" = "qemu" ] && [ -f "${SCRIPT_DIR}/windows-11-arm64-packer/build.sh" ]; then
+    log_info "Executing dedicated Windows 11 ARM64 QEMU build pipeline..."
+    "${SCRIPT_DIR}/windows-11-arm64-packer/build.sh"
+    cmd_box "${PROVIDER}"
+    log_success "Windows 11 build and box creation completed successfully!"
+    return 0
+  fi
+
   log_info "Validating Packer templates..."
   packer validate -var-file="${pkrvars}" "${SCRIPT_DIR}/packer_templates"
 
   log_info "Executing Packer Build for Windows 11 (${PROVIDER})..."
   local pkr_opts=("-timestamp-ui" "-force" "-var-file=${pkrvars}")
 
-  if [ -n "${CUSTOM_ISO}" ]; then
-    pkr_opts+=("-var" "iso_url=file://${CUSTOM_ISO}")
+  local effective_iso="${CUSTOM_ISO:-${iso_path}}"
+  if [ -n "${effective_iso}" ]; then
+    pkr_opts+=("-var" "iso_url=file://${effective_iso}")
+    if [ -f "${effective_iso}.sha256" ]; then
+      pkr_opts+=("-var" "iso_checksum=$(cat "${effective_iso}.sha256")")
+    elif [ -n "${PKR_VAR_iso_checksum:-}" ]; then
+      pkr_opts+=("-var" "iso_checksum=${PKR_VAR_iso_checksum}")
+    fi
   fi
 
   if [ "${PROVIDER}" = "qemu" ]; then

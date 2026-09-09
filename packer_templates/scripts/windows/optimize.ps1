@@ -2,38 +2,38 @@ Set-StrictMode -Version Latest
 $ProgressPreference = 'SilentlyContinue'
 $ErrorActionPreference = 'Stop'
 
-function Write-SerialLog {
-    param([string]$message)
-    Write-Host $message
-    try {
-        cmd.exe /c "echo [WIN11-OPTIMIZE] $message > COM1" 2>$null
-    } catch { }
-}
-
 trap {
     Write-Host
     Write-Host "ERROR: $_"
-    ($_.ScriptStackTrace -split "`r`n") -replace '^(.*)$','ERROR: $1' | Write-Host
-    ($_.Exception.ToString() -split "`r`n") -replace '^(.*)$','ERROR EXCEPTION: $1' | Write-Host
+    ($_.ScriptStackTrace -split '?
+') -replace '^(.*)$','ERROR: $1' | Write-Host
+    ($_.Exception.ToString() -split '?
+') -replace '^(.*)$','ERROR EXCEPTION: $1' | Write-Host
     Write-Host
     Exit 1
 }
 
+# Enable TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-Write-SerialLog "Starting Windows 11 Disk Optimization & Size Reduction..."
+Write-Host "Deleting residual pagefile and swapfile..."
+try {
+    Remove-Item -Path "C:\pagefile.sys" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "C:\swapfile.sys" -Force -ErrorAction SilentlyContinue
+} catch { }
 
-Write-SerialLog "Enabling CompactOS filesystem compression on system binaries..."
+Write-Host "Enabling CompactOS compression on system binaries..."
 try {
     compact.exe /compactOS:always
 } catch {
-    Write-SerialLog "CompactOS warning: $_"
+    Write-Host "CompactOS warning: $_"
 }
 
-Write-SerialLog "Compressing static program and system directories using LZX..."
+Write-Host "Compressing static program and system directories using LZX..."
 @(
     "C:\Program Files",
     "C:\Program Files (x86)",
+    "C:\ProgramData",
     "C:\Windows\System32\DriverStore\FileRepository",
     "C:\Windows\System32\WindowsPowerShell",
     "C:\Windows\Microsoft.NET",
@@ -48,73 +48,90 @@ Write-SerialLog "Compressing static program and system directories using LZX..."
     }
 }
 
-Write-SerialLog "Disabling Hibernation to remove hiberfil.sys..."
+Write-Host "Disabling Hibernation to remove hiberfil.sys..."
 try {
     powercfg.exe /hibernate off
 } catch { }
 
-Write-SerialLog "Deleting Volume Shadow Copies..."
+Write-Host "Deleting Volume Shadow Copies..."
 try {
     vssadmin.exe delete shadows /all /quiet 2>$null
 } catch { }
 
-Write-SerialLog "Disabling System Restore..."
+Write-Host "Disabling System Restore..."
 try {
     Disable-ComputerRestore -Drive "C:" -ErrorAction SilentlyContinue
 } catch { }
 
-Write-SerialLog "Purging Recycle Bin and DNS cache..."
+Write-Host "Purging Recycle Bin and DNS cache..."
 try {
     Clear-RecycleBin -Force -ErrorAction SilentlyContinue
     Clear-DnsClientCache -ErrorAction SilentlyContinue
 } catch { }
 
-Write-SerialLog "Defragmenting and consolidating volume free space..."
+Write-Host "Optimizing and defragmenting volume..."
 try {
     Optimize-Volume -DriveLetter C -Defrag -Verbose
 } catch {
-    Write-SerialLog "Defrag warning: $_"
+    Write-Host "Defrag warning: $_"
 }
 
-Write-SerialLog "Zeroing free disk space for maximum box compression..."
-$FilePath = "C:\zero.tmp"
-$ArraySize = 4MB
-$ZeroArray = [byte[]]::new($ArraySize)
-
+Write-Host "Zeroing free disk space for maximum box compression..."
+$sdeleteDownloaded = $false
 try {
-    $Stream = [System.IO.File]::OpenWrite($FilePath)
+    Write-Host "Downloading SDelete64a (ARM64) from Sysinternals..."
+    Invoke-WebRequest -Uri "https://live.sysinternals.com/sdelete64a.exe" -OutFile "$env:TEMP\sdelete.exe" -UseBasicParsing -ErrorAction Stop
+    $sdeleteDownloaded = $true
+} catch {
+    Write-Host "Failed to download SDelete: $_"
+}
+
+if ($sdeleteDownloaded) {
     try {
-        while ($true) {
-            $Stream.Write($ZeroArray, 0, $ZeroArray.Length)
+        Write-Host "Running SDelete to zero free space and MFT..."
+        Start-Process -FilePath "$env:TEMP\sdelete.exe" -ArgumentList "-z", "-accepteula", "C:" -Wait -NoNewWindow
+    } catch {
+        Write-Host "SDelete failed, falling back to manual zeroing."
+        $sdeleteDownloaded = $false
+    }
+}
+
+if (-not $sdeleteDownloaded) {
+    $FilePath = "C:\zero.tmp"
+    $ArraySize = 4MB
+    $ZeroArray = [byte[]]::new($ArraySize)
+
+    try {
+        $Stream = [System.IO.File]::OpenWrite($FilePath)
+        try {
+            while ($true) {
+                $Stream.Write($ZeroArray, 0, $ZeroArray.Length)
+            }
+        } catch [System.IO.IOException] {
+            # Disk full reached - expected
+            Write-Host "Free disk space successfully filled with zeroes."
+        } finally {
+            if ($Stream) {
+                $Stream.Flush()
+                $Stream.Close()
+                $Stream.Dispose()
+            }
         }
     } catch {
-        # Disk full reached - expected
-        Write-SerialLog "Free disk space successfully saturated with zeroes."
+        Write-Host "Zeroing caught error: $_"
     } finally {
-        if ($Stream) {
-            try { $Stream.Close() } catch { }
-            try { $Stream.Dispose() } catch { }
-            $Stream = $null
+        if (Test-Path $FilePath) {
+            Remove-Item -Force $FilePath -ErrorAction SilentlyContinue
         }
-    }
-} catch {
-    Write-SerialLog "Zeroing completed: $_"
-} finally {
-    $ZeroArray = $null
-    [GC]::Collect()
-    [GC]::WaitForPendingFinalizers()
-    Start-Sleep -Seconds 2
-    if (Test-Path $FilePath) {
-        Remove-Item -Force $FilePath -ErrorAction SilentlyContinue
     }
 }
 
-Write-SerialLog "ReTrimming Drive to unmap zeroed free blocks at hypervisor level..."
+Write-Host "ReTrimming Drive to unmap zeroed free blocks at hypervisor level..."
 try {
     Optimize-Volume -DriveLetter C -ReTrim -Verbose -ErrorAction SilentlyContinue
 } catch {
-    Write-SerialLog "ReTrim warning: $_"
+    Write-Host "ReTrim warning: $_"
 }
 
-Write-SerialLog "Disk optimization, zero-wipe, and ReTrim complete."
+Write-Host "Disk optimization complete."
 exit 0

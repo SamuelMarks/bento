@@ -13,3 +13,4 @@ Autounattend.xml eol=crlf
 
 # Force binary on these files
 *.cer binary
+*.inf binary

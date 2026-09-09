@@ -12,7 +12,6 @@ memory    = 6144
 disk_size = 65536
 headless  = true
 
-qemu_accelerator      = "kvm"
 qemu_binary           = "qemu-system-x86_64"
 qemu_machine_type     = "q35"
 qemu_cpu_model        = "host"

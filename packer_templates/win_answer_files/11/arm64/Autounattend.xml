@@ -4,125 +4,8 @@
         <component name="Microsoft-Windows-LUA-Settings" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <EnableLUA>false</EnableLUA>
         </component>
-        <component name="Microsoft-Windows-PnpCustomizationsNonWinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-            <DriverPaths>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="1"><Path>X:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="2"><Path>C:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="3"><Path>D:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="4"><Path>E:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="5"><Path>F:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="6"><Path>G:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="7"><Path>H:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="8"><Path>D:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="9"><Path>D:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="10"><Path>D:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="11"><Path>D:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="12"><Path>D:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="13"><Path>D:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="14"><Path>D:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="15"><Path>D:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="16"><Path>D:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="17"><Path>D:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="18"><Path>D:\viomem\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="19"><Path>E:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="20"><Path>E:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="21"><Path>E:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="22"><Path>E:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="23"><Path>E:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="24"><Path>E:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="25"><Path>E:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="26"><Path>E:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="27"><Path>E:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="28"><Path>E:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="29"><Path>E:\viomem\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="30"><Path>F:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="31"><Path>F:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="32"><Path>F:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="33"><Path>F:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="34"><Path>F:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="35"><Path>F:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="36"><Path>F:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="37"><Path>F:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="38"><Path>F:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="39"><Path>F:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="40"><Path>F:\viomem\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="41"><Path>G:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="42"><Path>G:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="43"><Path>G:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="44"><Path>G:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="45"><Path>G:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="46"><Path>G:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="47"><Path>G:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="48"><Path>G:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="49"><Path>G:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="50"><Path>G:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="51"><Path>G:\viomem\w11\ARM64</Path></PathAndCredentials>
-            
-                <PathAndCredentials wcm:action="add" wcm:keyValue="100"><Path>C:\drivers</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="101"><Path>C:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="102"><Path>C:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="103"><Path>C:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="104"><Path>C:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="105"><Path>C:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="106"><Path>C:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="107"><Path>C:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="108"><Path>C:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="109"><Path>C:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="110"><Path>C:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="111"><Path>C:\viomem\w11\ARM64</Path></PathAndCredentials>
-            </DriverPaths>
-        </component>
     </settings>
     <settings pass="windowsPE">
-        <component name="Microsoft-Windows-PnpCustomizationsWinPE" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" processorArchitecture="arm64">
-            <DriverPaths>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="1"><Path>D:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="2"><Path>D:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="3"><Path>D:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="4"><Path>D:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="5"><Path>D:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="6"><Path>D:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="7"><Path>D:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="8"><Path>D:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="9"><Path>D:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="10"><Path>D:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="11"><Path>D:\viomem\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="12"><Path>E:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="13"><Path>E:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="14"><Path>E:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="15"><Path>E:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="16"><Path>E:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="17"><Path>E:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="18"><Path>E:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="19"><Path>E:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="20"><Path>E:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="21"><Path>E:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="22"><Path>E:\viomem\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="23"><Path>F:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="24"><Path>F:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="25"><Path>F:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="26"><Path>F:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="27"><Path>F:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="28"><Path>F:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="29"><Path>F:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="30"><Path>F:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="31"><Path>F:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="32"><Path>F:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="33"><Path>F:\viomem\w11\ARM64</Path></PathAndCredentials>
-            
-                <PathAndCredentials wcm:action="add" wcm:keyValue="100"><Path>C:\viostor\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="101"><Path>C:\NetKVM\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="102"><Path>C:\Balloon\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="103"><Path>C:\pvpanic\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="104"><Path>C:\vioscsi\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="105"><Path>C:\vioserial\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="106"><Path>C:\vioinput\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="107"><Path>C:\viorng\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="108"><Path>C:\viofs\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="109"><Path>C:\viogpudo\w11\ARM64</Path></PathAndCredentials>
-                <PathAndCredentials wcm:action="add" wcm:keyValue="110"><Path>C:\viomem\w11\ARM64</Path></PathAndCredentials>
-            </DriverPaths>
-        </component>
         <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <SetupUILanguage>
                 <UILanguage>en-US</UILanguage>
@@ -164,14 +47,9 @@
                             <Label>System</Label>
                             <Format>FAT32</Format>
                         </ModifyPartition>
-                        <!-- MSR partition - no format but needs entry -->
-                        <ModifyPartition wcm:action="add">
-                            <Order>2</Order>
-                            <PartitionID>2</PartitionID>
-                        </ModifyPartition>
                         <!-- Format the Windows partition -->
                         <ModifyPartition wcm:action="add">
-                            <Order>3</Order>
+                            <Order>2</Order>
                             <PartitionID>3</PartitionID>
                             <Label>Windows</Label>
                             <Format>NTFS</Format>
@@ -194,12 +72,11 @@
                         <DiskID>0</DiskID>
                         <PartitionID>3</PartitionID>
                     </InstallTo>
-                    <Compact>true</Compact>
                 </OSImage>
             </ImageInstall>
             <UserData>
                 <ProductKey>
-                    %{ if windows_product_key != "" }<Key>${windows_product_key}</Key>%{ endif }
+                    %{ if windows_product_key != "" }<Key>${windows_product_key}</Key>%{ else }<Key>W269N-WFGWX-YVC9B-4J6C9-T83GX</Key>%{ endif }
                     <WillShowUI>Never</WillShowUI>
                 </ProductKey>
                 <AcceptEula>true</AcceptEula>
@@ -287,7 +164,7 @@
             <RunSynchronous>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>1</Order>
-                    <Path>cmd.exe /c "if not exist C:\Windows\Setup\Scripts mkdir C:\Windows\Setup\Scripts &amp; for %d in (c d e f g) do if exist %d:\SetupComplete.cmd copy /y %d:\SetupComplete.cmd C:\Windows\Setup\Scripts\SetupComplete.cmd"</Path>
+                    <Path>cmd.exe /c "if not exist C:\Windows\Setup\Scripts mkdir C:\Windows\Setup\Scripts &amp; for %d in (c d e f g h i) do if exist %d:\SetupComplete.cmd copy /y %d:\SetupComplete.cmd C:\Windows\Setup\Scripts\SetupComplete.cmd"</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>2</Order>
@@ -435,134 +312,149 @@
                 <Username>vagrant</Username>
                 <Enabled>true</Enabled>
             </AutoLogon>
-            <FirstLogonCommands>
-                <SynchronousCommand wcm:action="add">
+            <FirstLogonCommands>                <SynchronousCommand wcm:action="add">
                     <Order>1</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (c d e f g h i) do if exist %d:\NetKVM\w11\ARM64\netkvm.inf pnputil.exe /add-driver %d:\NetKVM\w11\ARM64\netkvm.inf /install"</CommandLine>
+                    <Description>Install NetKVM Driver</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>2</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (c d e f g h i) do if exist %d:\viostor\w11\ARM64\viostor.inf pnputil.exe /add-driver %d:\viostor\w11\ARM64\viostor.inf /install"</CommandLine>
+                    <Description>Install Viostor Driver</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>3</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (c d e f g h i) do if exist %d:\Balloon\w11\ARM64\balloon.inf pnputil.exe /add-driver %d:\Balloon\w11\ARM64\balloon.inf /install"</CommandLine>
+                    <Description>Install Balloon Driver</Description>
+                </SynchronousCommand>
+
+                <SynchronousCommand wcm:action="add">
+                    <Order>4</Order>
                     <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"</CommandLine>
                     <Description>Set Execution Policy 64 Bit</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>2</Order>
+                    <Order>5</Order>
                     <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'SilentlyContinue'; Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private"</CommandLine>
                     <Description>Set Private Network Category</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>3</Order>
+                    <Order>6</Order>
                     <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'SilentlyContinue'; Set-NetFirewallRule -Name 'WINRM-HTTP-In-TCP' -RemoteAddress Any; New-NetFirewallRule -DisplayName 'WinRM HTTP' -Name 'WINRM-HTTP-In-TCP' -Profile Any -LocalPort 5985 -Protocol TCP -Action Allow -Direction Inbound"</CommandLine>
                     <Description>Allow WinRM firewall rule</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>4</Order>
+                    <Order>7</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -q</CommandLine>
                     <Description>winrm quickconfig -q</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>5</Order>
+                    <Order>8</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -transport:http</CommandLine>
                     <Description>winrm quickconfig -transport:http</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>6</Order>
+                    <Order>9</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config @{MaxTimeoutms="1800000"}</CommandLine>
                     <Description>WinRM MaxTimeoutms</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>7</Order>
+                    <Order>10</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}</CommandLine>
                     <Description>WinRM MaxMemoryPerShellMB</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>8</Order>
+                    <Order>11</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted="true"}</CommandLine>
                     <Description>WinRM AllowUnencrypted</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>9</Order>
+                    <Order>12</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service/auth @{Basic="true"}</CommandLine>
                     <Description>WinRM auth Basic</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>10</Order>
+                    <Order>13</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/client/auth @{Basic="true"}</CommandLine>
                     <Description>WinRM client auth Basic</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>11</Order>
+                    <Order>14</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/listener?Address=*+Transport=HTTP @{Port="5985"}</CommandLine>
                     <Description>WinRM listener Address/Port</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>12</Order>
+                    <Order>15</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c netsh advfirewall firewall add rule name="Port 5985" dir=in action=allow protocol=TCP localport=5985</CommandLine>
                     <Description>Open Port 5985 in Firewall</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>13</Order>
+                    <Order>16</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c net stop winrm</CommandLine>
                     <Description>Stop WinRM</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>14</Order>
+                    <Order>17</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c sc config winrm start= auto</CommandLine>
                     <Description>WinRM Autostart</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>15</Order>
+                    <Order>18</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c net start winrm</CommandLine>
                     <Description>Start WinRM</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>16</Order>
+                    <Order>19</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant /expires:never</CommandLine>
                     <Description>Disable password expiration for vagrant user</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /t REG_SZ /d "vagrant" /f</CommandLine>
-                    <Order>17</Order>
+                    <Order>20</Order>
                     <Description>Enable AutoLogon DefaultPassword</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 1 /f</CommandLine>
-                    <Order>18</Order>
+                    <Order>21</Order>
                     <Description>Enable AutoLogon AutoAdminLogon</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>19</Order>
+                    <Order>22</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f</CommandLine>
                     <Description>Enable LocalAccountTokenFilterPolicy</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>20</Order>
+                    <Order>23</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowBasic /t REG_DWORD /d 1 /f</CommandLine>
                     <Description>Allow Basic Auth Service Policy</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>21</Order>
+                    <Order>24</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f</CommandLine>
                     <Description>Allow Unencrypted Traffic Service Policy</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>22</Order>
+                    <Order>25</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowBasic /t REG_DWORD /d 1 /f</CommandLine>
                     <Description>Allow Basic Auth Client Policy</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>23</Order>
+                    <Order>26</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f</CommandLine>
                     <Description>Allow Unencrypted Traffic Client Policy</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>24</Order>
+                    <Order>27</Order>
                     <CommandLine>%SystemRoot%\System32\bcdedit.exe /ems {current} off</CommandLine>
                     <Description>Disable Kernel EMS to release COM1</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>25</Order>
+                    <Order>28</Order>
                     <CommandLine>%SystemRoot%\System32\bcdedit.exe /bootems off</CommandLine>
                     <Description>Disable Boot EMS</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>26</Order>
+                    <Order>29</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c "echo [WIN11-SERIAL] WinRM and Serial Ready > COM1"</CommandLine>
                     <Description>Notify COM1 Serial</Description>
                 </SynchronousCommand>
