@@ -8,6 +8,7 @@
 # Commands:
 #   build          Build the Windows 11 box using Packer + auto-box compression (default)
 #   box            Compress, sparsify, and package VM disk into minimal .box
+#   register       Register built .box into local Vagrant inventory as bento/windows-11
 #   run            Run the built VM / box directly with KVM, serial & networking
 #   serial         Connect via serial to debug the running VM in real time
 #   status         Show status of ISOs, build files, and running processes
@@ -116,37 +117,39 @@ case "${ARCH}" in
 esac
 
 # Auto-detect hypervisor provider
-if [ -e "/dev/kvm" ] && [ -w "/dev/kvm" ]; then
-  PROVIDER="qemu"
-elif command -v VBoxManage >/dev/null 2>&1; then
-  PROVIDER="virtualbox"
-elif command -v "qemu-system-${ARCH}" >/dev/null 2>&1; then
-  PROVIDER="qemu"
-else
-  PROVIDER="qemu"
+if [ -z "${PROVIDER:-}" ]; then
+  if [ -e "/dev/kvm" ] && [ -w "/dev/kvm" ]; then
+    PROVIDER="qemu"
+  elif command -v VBoxManage >/dev/null 2>&1; then
+    PROVIDER="virtualbox"
+  elif command -v "qemu-system-${ARCH}" >/dev/null 2>&1; then
+    PROVIDER="qemu"
+  else
+    PROVIDER="qemu"
+  fi
 fi
 
-HEADLESS=""
-DEBUG_MODE="false"
-STEP_MODE="false"
-STREAM_SERIAL="false"
-SERIAL_WATCH="false"
-SERIAL_TAIL_LINES=""
-SERIAL_SEND_CMD=""
-VM_MEM="6144"
-VM_CPUS="4"
-VM_VNC=""
-CUSTOM_ISO=""
-TMP_DIR="${TMPDIR:-/tmp}"
-SERIAL_SOCK="/tmp/windows-11-serial.sock"
-SERIAL_CLIENT_SOCK="/tmp/windows-11-serial-client.sock"
-SERIAL_LOG="${SCRIPT_DIR}/serial.log"
-PROXY_SCRIPT="${SCRIPT_DIR}/serial_proxy.py"
+HEADLESS="${HEADLESS:-}"
+DEBUG_MODE="${DEBUG_MODE:-false}"
+STEP_MODE="${STEP_MODE:-false}"
+STREAM_SERIAL="${STREAM_SERIAL:-false}"
+SERIAL_WATCH="${SERIAL_WATCH:-false}"
+SERIAL_TAIL_LINES="${SERIAL_TAIL_LINES:-}"
+SERIAL_SEND_CMD="${SERIAL_SEND_CMD:-}"
+VM_MEM="${VM_MEM:-6144}"
+VM_CPUS="${VM_CPUS:-4}"
+VM_VNC="${VM_VNC:-}"
+CUSTOM_ISO="${CUSTOM_ISO:-}"
+TMP_DIR="${TMP_DIR:-${TMPDIR:-/tmp}}"
+SERIAL_SOCK="${SERIAL_SOCK:-/tmp/windows-11-serial.sock}"
+SERIAL_CLIENT_SOCK="${SERIAL_CLIENT_SOCK:-/tmp/windows-11-serial-client.sock}"
+SERIAL_LOG="${SERIAL_LOG:-${SCRIPT_DIR}/serial.log}"
+PROXY_SCRIPT="${PROXY_SCRIPT:-${SCRIPT_DIR}/serial_proxy.py}"
 
 # Parse CLI arguments
 while [ $# -gt 0 ]; do
   case "$1" in
-    build|box|run|serial|status|clean)
+    build|box|register|run|serial|status|clean)
       COMMAND="$1"
       shift
       ;;
@@ -350,7 +353,7 @@ ensure_oem_iso() {
 
   # 2. Render Autounattend.xml from answer file template
   _ans_src="${SCRIPT_DIR}/packer_templates/win_answer_files/11/arm64/Autounattend.xml"
-  _key="${WIN11_PRODUCT_KEY:-W269N-WFGWX-YVC9B-4J6C9-T83GX}"
+  _key="${WIN11_PRODUCT_KEY:-${WINDOWS_PRODUCT_KEY:-${PKR_VAR_windows_product_key:-W269N-WFGWX-YVC9B-4J6C9-T83GX}}}"
   python3 -c "
 import re
 c = open('${_ans_src}', 'r', encoding='utf-8', errors='ignore').read()
@@ -891,14 +894,10 @@ cmd_box() {
     _virt_gb=$(qemu-img info --output=json "${_src_img}" | python3 -c "import sys, json; print(int(json.load(sys.stdin).get('virtual-size', 68719476736) / (1024**3)))" 2>/dev/null || echo "64")
 
     # Step 3: Generate Vagrant metadata and template
-    _meta_provider="${_provider}"
-    if [ "${_provider}" = "qemu" ]; then
-      _meta_provider="libvirt"
-    fi
-    log_info "Step 3: Generating Vagrant metadata (${_meta_provider}, virtual_size: ${_virt_gb} GB) and Vagrantfile template..."
+    log_info "Step 3: Generating Vagrant metadata (${_provider}, virtual_size: ${_virt_gb} GB) and Vagrantfile template..."
     cat << EOF > "${_build_files_dir}/metadata.json"
 {
-  "provider": "${_meta_provider}",
+  "provider": "${_provider}",
   "format": "qcow2",
   "virtual_size": ${_virt_gb}
 }
@@ -953,6 +952,7 @@ Vagrant.configure("2") do |config|
       qe.ssh_auto_correct = true
 
       bios_candidates = [
+        ENV["QEMU_EDK2_CODE"],
         ENV["QEMU_EDK2_PATH"],
         ENV["QEMU_BIOS"],
         "/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
@@ -991,6 +991,7 @@ Vagrant.configure("2") do |config|
       qe.ssh_auto_correct = true
 
       ovmf_candidates = [
+        ENV["QEMU_EDK2_CODE"],
         ENV["QEMU_EDK2_PATH"],
         ENV["QEMU_BIOS"],
         "/usr/share/OVMF/OVMF_CODE.fd",
@@ -1059,10 +1060,35 @@ EOF
 
     mv -f "${_tmp_box}" "${_target_box}"
 
-    # Also link libvirt box to match vagrant provider convention
+    # Also build companion libvirt box with provider: libvirt to match vagrant provider convention
     _libvirt_box="${BENTO_BUILD_COMPLETE_DIR}/windows-11-${ARCH}.libvirt.box"
     if [ "${_target_box}" != "${_libvirt_box}" ]; then
-      cp -f "${_target_box}" "${_libvirt_box}"
+      log_info "Packaging companion libvirt box (${_libvirt_box})..."
+      cat << EOF > "${_build_files_dir}/metadata.json"
+{
+  "provider": "libvirt",
+  "format": "qcow2",
+  "virtual_size": ${_virt_gb}
+}
+EOF
+      _tmp_libvirt="${_libvirt_box}.tmp"
+      (
+        cd "${_build_files_dir}"
+        if command -v pigz >/dev/null 2>&1; then
+          if [ -n "${_tar_sparse}" ]; then
+            ${_tar_cmd} "${_tar_sparse}" -I 'pigz -9' -cf "${_tmp_libvirt}" metadata.json Vagrantfile box.img
+          else
+            ${_tar_cmd} -I 'pigz -9' -cf "${_tmp_libvirt}" metadata.json Vagrantfile box.img
+          fi
+        else
+          if [ -n "${_tar_sparse}" ]; then
+            GZIP="-9" ${_tar_cmd} "${_tar_sparse}" -czf "${_tmp_libvirt}" metadata.json Vagrantfile box.img
+          else
+            GZIP="-9" ${_tar_cmd} -czf "${_tmp_libvirt}" metadata.json Vagrantfile box.img
+          fi
+        fi
+      )
+      mv -f "${_tmp_libvirt}" "${_libvirt_box}"
     fi
 
     _box_bytes=$(get_file_size "${_target_box}")
@@ -1104,6 +1130,42 @@ EOF
     _box_bytes=$(get_file_size "${_target_box}")
     log_success "Created optimized box: ${_target_box} ($((_box_bytes / 1024 / 1024)) MB)"
   fi
+
+  # Auto-register box locally into Vagrant
+  cmd_register "${_provider}"
+}
+
+# Register built box into local Vagrant inventory as bento/windows-11
+cmd_register() {
+  _provider="${1:-${PROVIDER}}"
+  if ! command -v vagrant >/dev/null 2>&1; then
+    log_warn "Vagrant CLI not found in PATH. Skipping local box registration."
+    return 0
+  fi
+
+  log_info "Registering Windows 11 box into local Vagrant inventory as 'bento/windows-11'..."
+  _qemu_box="${BENTO_BUILD_COMPLETE_DIR}/windows-11-${ARCH}.qemu.box"
+  _libvirt_box="${BENTO_BUILD_COMPLETE_DIR}/windows-11-${ARCH}.libvirt.box"
+  _vbox_box="${BENTO_BUILD_COMPLETE_DIR}/windows-11-${ARCH}.virtualbox.box"
+
+  if [ "${_provider}" = "qemu" ]; then
+    if [ -f "${_qemu_box}" ]; then
+      log_info "Adding ${_qemu_box} as 'bento/windows-11' (qemu)..."
+      vagrant box add --name "bento/windows-11" "${_qemu_box}" --force
+    fi
+    if [ -f "${_libvirt_box}" ]; then
+      log_info "Adding ${_libvirt_box} as 'bento/windows-11' (libvirt)..."
+      vagrant box add --name "bento/windows-11" "${_libvirt_box}" --force
+    fi
+  elif [ "${_provider}" = "virtualbox" ]; then
+    if [ -f "${_vbox_box}" ]; then
+      log_info "Adding ${_vbox_box} as 'bento/windows-11' (virtualbox)..."
+      vagrant box add --name "bento/windows-11" "${_vbox_box}" --force
+    fi
+  fi
+
+  log_success "Vagrant box registration complete. Current Windows 11 Vagrant boxes:"
+  vagrant box list | grep -i "windows-11" || true
 }
 
 # Main build execution
@@ -1189,6 +1251,21 @@ cmd_build() {
   fi
 
   set -- "$@" -var "headless=${HEADLESS}"
+  set -- "$@" -var "cpus=${VM_CPUS}" -var "memory=${VM_MEM}"
+
+  _key="${WIN11_PRODUCT_KEY:-${WINDOWS_PRODUCT_KEY:-${PKR_VAR_windows_product_key:-}}}"
+  if [ -n "${_key}" ]; then
+    set -- "$@" -var "windows_product_key=${_key}"
+  fi
+  if [ -n "${QEMU_EDK2_CODE:-}" ]; then
+    set -- "$@" -var "qemu_efi_firmware_code=${QEMU_EDK2_CODE}"
+  fi
+  if [ -n "${QEMU_EDK2_VARS:-}" ]; then
+    set -- "$@" -var "qemu_efi_firmware_vars=${QEMU_EDK2_VARS}"
+  fi
+  if [ -n "${INSTALL_WINDOWS_UPDATES:-}" ]; then
+    set -- "$@" -var "install_windows_updates=${INSTALL_WINDOWS_UPDATES}"
+  fi
   if [ "${DEBUG_MODE}" = "true" ]; then
     export PACKER_LOG=1
   fi
@@ -1207,12 +1284,13 @@ cmd_build() {
 
 # Main Entrypoint
 case "${COMMAND}" in
-  build)  cmd_build ;;
-  box)    cmd_box "${PROVIDER}" ;;
-  run)    cmd_run ;;
-  serial) cmd_serial ;;
-  status) cmd_status ;;
-  clean)  cmd_clean ;;
+  build)    cmd_build ;;
+  box)      cmd_box "${PROVIDER}" ;;
+  register) cmd_register "${PROVIDER}" ;;
+  run)      cmd_run ;;
+  serial)   cmd_serial ;;
+  status)   cmd_status ;;
+  clean)    cmd_clean ;;
   *)
     log_error "Unknown command: ${COMMAND}"
     exit 1

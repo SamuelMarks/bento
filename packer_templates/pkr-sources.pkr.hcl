@@ -71,7 +71,7 @@ locals {
   ) : var.qemu_display
   qemu_efi_boot = var.qemu_efi_boot == null ? true : var.qemu_efi_boot
   qemu_efi_firmware_code = local.qemu_efi_boot ? (
-    var.qemu_efi_firmware_code != null ? var.qemu_efi_firmware_code : (
+    var.qemu_efi_firmware_code != null && var.qemu_efi_firmware_code != "" ? var.qemu_efi_firmware_code : (
       var.os_arch == "aarch64" ? (
         fileexists("/opt/homebrew/share/qemu/edk2-aarch64-code.fd") ? "/opt/homebrew/share/qemu/edk2-aarch64-code.fd" : (
           fileexists("/usr/share/AAVMF/AAVMF_CODE.fd") ? "/usr/share/AAVMF/AAVMF_CODE.fd" : (
@@ -124,7 +124,7 @@ locals {
     )
   ) : null
   qemu_efi_firmware_vars = local.qemu_efi_boot ? (
-    var.qemu_efi_firmware_vars != null ? var.qemu_efi_firmware_vars : (
+    var.qemu_efi_firmware_vars != null && var.qemu_efi_firmware_vars != "" ? var.qemu_efi_firmware_vars : (
       var.os_arch == "aarch64" ? (
         fileexists("/opt/homebrew/share/qemu/edk2-arm-vars.fd") ? "/opt/homebrew/share/qemu/edk2-arm-vars.fd" : (
           fileexists("/usr/share/AAVMF/AAVMF_VARS.fd") ? "/usr/share/AAVMF/AAVMF_VARS.fd" : (

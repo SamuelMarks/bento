@@ -57,6 +57,7 @@ Vagrant.configure(2) do |config|
       qe.ssh_auto_correct = true
 
       bios_candidates = [
+        ENV["QEMU_EDK2_CODE"],
         ENV["QEMU_EDK2_PATH"],
         ENV["QEMU_BIOS"],
         "/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
@@ -95,6 +96,7 @@ Vagrant.configure(2) do |config|
       qe.ssh_auto_correct = true
 
       ovmf_candidates = [
+        ENV["QEMU_EDK2_CODE"],
         ENV["QEMU_EDK2_PATH"],
         ENV["QEMU_BIOS"],
         "/usr/share/OVMF/OVMF_CODE.fd",

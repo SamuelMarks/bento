@@ -218,12 +218,12 @@ variable "qemu_efi_boot" {
 }
 variable "qemu_efi_firmware_code" {
   type        = string
-  default     = null
+  default     = env("QEMU_EDK2_CODE")
   description = "EFI firmware code path"
 }
 variable "qemu_efi_firmware_vars" {
   type        = string
-  default     = null
+  default     = env("QEMU_EDK2_VARS")
   description = "EFI firmware vars file path"
 }
 variable "qemu_efi_drop_efivars" {
@@ -667,8 +667,8 @@ variable "scripts" {
 
 variable "windows_product_key" {
   type        = string
-  default     = ""
-  description = "The valid product key for Windows Server, typically loaded from .env"
+  default     = env("WINDOWS_PRODUCT_KEY") != "" ? env("WINDOWS_PRODUCT_KEY") : env("WIN11_PRODUCT_KEY")
+  description = "The valid product key for Windows Server or Windows 11, typically loaded from .env"
 }
 
 variable "qemu_vnc_bind_address" {
@@ -692,7 +692,7 @@ variable "win11_media_raw" {
 
 variable "win11_oem_iso" {
   type        = string
-  default     = null
+  default     = env("WIN11_OEM_ISO")
   description = "Path to the OEM installation ISO for Windows 11 ARM64"
 }
 
