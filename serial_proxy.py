@@ -51,13 +51,19 @@ def main():
     while running:
         # Try to connect to QEMU serial socket if not connected
         if qemu_conn is None:
-            if os.path.exists(QEMU_SOCK):
+            active_sock = None
+            candidates = [QEMU_SOCK, "/tmp/windows-11-serial.sock", "/tmp/bento-qemu-serial.sock"]
+            for cand in candidates:
+                if cand and os.path.exists(cand):
+                    active_sock = cand
+                    break
+            if active_sock:
                 try:
                     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                    s.connect(QEMU_SOCK)
+                    s.connect(active_sock)
                     s.setblocking(False)
                     qemu_conn = s
-                    print("[serial_proxy] Connected to QEMU serial port.", file=sys.stderr)
+                    print(f"[serial_proxy] Connected to QEMU serial port: {active_sock}", file=sys.stderr)
                 except Exception:
                     qemu_conn = None
             if qemu_conn is None:

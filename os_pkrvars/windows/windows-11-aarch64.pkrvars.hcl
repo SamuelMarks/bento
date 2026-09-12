@@ -3,6 +3,7 @@ os_version        = "11"
 os_arch           = "aarch64"
 is_windows        = true
 hyperv_generation = 2
+windows_product_key = "W269N-WFGWX-YVC9B-4J6C9-T83GX"
 
 # Download url's found at https://www.microsoft.com/en-us/evalcenter/download-windows-11-enterprise
 iso_url                 = "https://software-static.download.prss.microsoft.com/dbazure/888969d5-f34g-4e03-ac9d-1f9786c66749/26200.6584.250915-1905.25h2_ge_release_svc_refresh_CLIENT_CONSUMER_a64fre_en-us.iso"
@@ -12,14 +13,19 @@ cpus     = 4
 memory   = 6144
 headless = true
 
-boot_command      = ["<spacebar><wait1s><spacebar><wait1s><spacebar><wait1s><spacebar><wait1s><spacebar><wait1s><spacebar><wait1s><spacebar><wait1s><spacebar>"]
+boot_command      = ["<spacebar><wait500ms><spacebar><wait500ms><spacebar><wait500ms><spacebar><wait500ms><spacebar><wait500ms><spacebar><wait500ms><spacebar><wait500ms><spacebar><wait500ms><spacebar><wait500ms><spacebar>"]
 default_boot_wait = "2s"
 qemu_boot_wait    = "2s"
 vbox_boot_wait    = "2s"
+winrm_username    = "vagrant"
+winrm_password    = "vagrant"
+winrm_use_ntlm    = true
+winrm_insecure    = true
+winrm_use_ssl     = false
 winrm_timeout     = "2h"
 
 qemu_use_pflash       = true
-qemu_disk_interface   = "virtio"
+qemu_disk_interface   = "virtio-scsi"
 qemu_net_device       = "virtio-net-pci"
 qemu_vnc_bind_address = "127.0.0.1"
 

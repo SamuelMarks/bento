@@ -249,7 +249,7 @@
             <RunSynchronous>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>1</Order>
-                    <Path>cmd.exe /c "if not exist C:\Windows\Setup\Scripts mkdir C:\Windows\Setup\Scripts &amp; for %d in (c d e f g) do if exist %d:\SetupComplete.cmd copy /y %d:\SetupComplete.cmd C:\Windows\Setup\Scripts\SetupComplete.cmd"</Path>
+                    <Path>cmd.exe /c "if not exist C:\Windows\Setup\Scripts mkdir C:\Windows\Setup\Scripts &amp; for %d in (C D E F G H I J K) do if exist %d:\SetupComplete.cmd copy /y %d:\SetupComplete.cmd C:\Windows\Setup\Scripts\SetupComplete.cmd"</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>2</Order>
@@ -289,67 +289,35 @@
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>11</Order>
-                    <Path>cmd.exe /c sc.exe config winrm start= auto</Path>
+                    <Path>cmd.exe /c net.exe accounts /lockoutthreshold:0</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>12</Order>
-                    <Path>cmd.exe /c net.exe start winrm</Path>
+                    <Path>cmd.exe /c net.exe user Administrator /active:yes</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>13</Order>
-                    <Path>cmd.exe /c winrm quickconfig -q</Path>
+                    <Path>cmd.exe /c net.exe user Administrator vagrant</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
                     <Order>14</Order>
-                    <Path>cmd.exe /c winrm quickconfig -transport:http</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>15</Order>
-                    <Path>cmd.exe /c winrm set winrm/config @{MaxTimeoutms="1800000"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>16</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>17</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted="true"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>18</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/service/auth @{Basic="true"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>19</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/client/auth @{Basic="true"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>20</Order>
-                    <Path>cmd.exe /c winrm set "winrm/config/listener?Address=*+Transport=HTTP" @{Port="5985"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>21</Order>
                     <Path>cmd.exe /c powercfg.exe /hibernate off</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
-                    <Order>22</Order>
+                    <Order>15</Order>
                     <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" /v ShippedWithReserves /t REG_DWORD /d 0 /f</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
-                    <Order>23</Order>
+                    <Order>16</Order>
                     <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" /v PassedPolicy /t REG_DWORD /d 0 /f</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
-                    <Order>24</Order>
+                    <Order>17</Order>
                     <Path>cmd.exe /c bcdedit.exe /ems {current} off</Path>
                 </RunSynchronousCommand>
                 <RunSynchronousCommand wcm:action="add">
-                    <Order>25</Order>
+                    <Order>18</Order>
                     <Path>cmd.exe /c bcdedit.exe /bootems off</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>26</Order>
-                    <Path>cmd.exe /c "echo [WIN11-SERIAL] Specialize Pass WinRM and Serial Ready > COM1 || exit 0"</Path>
                 </RunSynchronousCommand>
             </RunSynchronous>
         </component>
@@ -402,8 +370,9 @@
                     <Value>vagrant</Value>
                     <PlainText>true</PlainText>
                 </Password>
-                <Username>Administrator</Username>
+                <Username>vagrant</Username>
                 <Enabled>true</Enabled>
+                <LogonCount>5</LogonCount>
             </AutoLogon>
             <FirstLogonCommands>
                 <SynchronousCommand wcm:action="add">
@@ -413,23 +382,23 @@
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant vagrant</CommandLine>
+                    <Description>Set vagrant password</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>3</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant /expires:never</CommandLine>
+                    <Description>Disable password expiration for vagrant user</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>4</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c net.exe user Administrator /active:yes</CommandLine>
                     <Description>Enable Administrator user</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>3</Order>
+                    <Order>5</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c net.exe user Administrator vagrant</CommandLine>
                     <Description>Set Administrator password</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>4</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c net.exe localgroup Administrators vagrant /add</CommandLine>
-                    <Description>Add vagrant to Administrators</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>5</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant /expires:never</CommandLine>
-                    <Description>Disable password expiration for vagrant user</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>6</Order>
@@ -438,96 +407,131 @@
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>7</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe localgroup Administrators vagrant /add</CommandLine>
+                    <Description>Add vagrant to Administrators</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>8</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe localgroup Administrators Administrator /add</CommandLine>
+                    <Description>Add Administrator to Administrators</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>9</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe accounts /lockoutthreshold:0</CommandLine>
+                    <Description>Disable Account Lockout</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>10</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f</CommandLine>
+                    <Description>Disable Remote UAC</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>11</Order>
                     <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"</CommandLine>
                     <Description>Set Execution Policy 64 Bit</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>8</Order>
-                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private"</CommandLine>
+                    <Order>12</Order>
+                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private"</CommandLine>
                     <Description>Sets detected network connections to private</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>9</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -q</CommandLine>
-                    <Description>winrm quickconfig -q</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>10</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -transport:http</CommandLine>
-                    <Description>winrm quickconfig -transport:http</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>11</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config @{MaxTimeoutms="1800000"}</CommandLine>
-                    <Description>WinRM MaxTimeoutms</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>12</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}</CommandLine>
-                    <Description>WinRM MaxMemoryPerShellMB</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
                     <Order>13</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted="true"}</CommandLine>
-                    <Description>WinRM AllowUnencrypted</Description>
+                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; Set-NetFirewallRule -Name 'WINRM-HTTP-In-TCP' -RemoteAddress Any; New-NetFirewallRule -DisplayName 'WinRM HTTP' -Name 'WINRM-HTTP-In-TCP' -Profile Any -LocalPort 5985 -Protocol TCP -Action Allow -Direction Inbound"</CommandLine>
+                    <Description>Allow WinRM firewall rule</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>14</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service/auth @{Basic="true"}</CommandLine>
-                    <Description>WinRM auth Basic</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>15</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/client/auth @{Basic="true"}</CommandLine>
-                    <Description>WinRM client auth Basic</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>16</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set "winrm/config/listener?Address=*+Transport=HTTP" @{Port="5985"}</CommandLine>
-                    <Description>WinRM listener Address/Port</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>17</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c netsh advfirewall firewall add rule name="Port 5985" dir=in action=allow protocol=TCP localport=5985</CommandLine>
                     <Description>Open Port 5985 in Firewall</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
+                    <Order>15</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -q -force</CommandLine>
+                    <Description>winrm quickconfig</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>16</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -transport:http</CommandLine>
+                    <Description>winrm quickconfig -transport:http</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>17</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config @{MaxTimeoutms="1800000"}</CommandLine>
+                    <Description>WinRM MaxTimeoutms</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
                     <Order>18</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}</CommandLine>
+                    <Description>WinRM MaxMemoryPerShellMB</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>19</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted="true"}</CommandLine>
+                    <Description>WinRM AllowUnencrypted</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>20</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service/auth @{Basic="true"}</CommandLine>
+                    <Description>WinRM auth Basic</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>21</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service/auth @{Negotiate="true"}</CommandLine>
+                    <Description>WinRM auth Negotiate</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>22</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/client/auth @{Basic="true"}</CommandLine>
+                    <Description>WinRM client auth Basic</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>23</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/client/auth @{Negotiate="true"}</CommandLine>
+                    <Description>WinRM client auth Negotiate</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>24</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set "winrm/config/listener?Address=*+Transport=HTTP" @{Port="5985"}</CommandLine>
+                    <Description>WinRM listener Address/Port</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>25</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c sc config winrm start= auto</CommandLine>
                     <Description>WinRM Autostart</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>19</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c net start winrm</CommandLine>
-                    <Description>Start WinRM Service</Description>
+                    <Order>26</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c "net stop winrm &amp; net start winrm || exit 0"</CommandLine>
+                    <Description>Restart WinRM Service</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>20</Order>
+                    <Order>27</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /t REG_SZ /d "vagrant" /f</CommandLine>
                     <Description>Enable AutoLogon DefaultPassword</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>21</Order>
+                    <Order>28</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultUsername /t REG_SZ /d "vagrant" /f</CommandLine>
                     <Description>Enable AutoLogon DefaultUsername</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>22</Order>
+                    <Order>29</Order>
                     <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 1 /f</CommandLine>
                     <Description>Enable AutoLogon AutoAdminLogon</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>23</Order>
+                    <Order>30</Order>
                     <CommandLine>%SystemRoot%\System32\bcdedit.exe /ems {current} off</CommandLine>
                     <Description>Disable Kernel EMS to release COM1</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>24</Order>
+                    <Order>31</Order>
                     <CommandLine>%SystemRoot%\System32\bcdedit.exe /bootems off</CommandLine>
                     <Description>Disable Boot EMS</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>25</Order>
+                    <Order>32</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c "echo [WIN11-SERIAL] WinRM and Serial Ready > COM1 || exit 0"</CommandLine>
                     <Description>Notify COM1 Serial</Description>
                 </SynchronousCommand>

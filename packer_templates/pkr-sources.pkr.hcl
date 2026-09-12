@@ -66,11 +66,7 @@ locals {
   qemu_binary = var.qemu_binary == null ? "qemu-system-${var.os_arch}" : var.qemu_binary
   qemu_display = var.qemu_display == null ? (
     var.headless || local.host_os == "linux" ? "none" : (
-      var.is_windows ? (
-        var.os_arch == "aarch64" ? "cocoa" : "none"
-        ) : (
-        local.host_os == "darwin" ? "cocoa" : "none"
-      )
+      local.host_os == "darwin" ? "cocoa" : "none"
     )
   ) : var.qemu_display
   qemu_efi_boot = var.qemu_efi_boot == null ? true : var.qemu_efi_boot
@@ -184,6 +180,16 @@ locals {
       fileexists("${path.root}/../builds/iso/win11_media.raw") ? "${path.root}/../builds/iso/win11_media.raw" : ""
     )
   )
+  win11_oem_iso_path = var.win11_oem_iso != null && var.win11_oem_iso != "" ? var.win11_oem_iso : (
+    fileexists("${local.build_dir}/iso/bento_win11_arm64_unattend.iso") ? "${local.build_dir}/iso/bento_win11_arm64_unattend.iso" : (
+      fileexists("${path.root}/../builds/iso/bento_win11_arm64_unattend.iso") ? "${path.root}/../builds/iso/bento_win11_arm64_unattend.iso" : ""
+    )
+  )
+  qemu_win11_oem_args = local.win11_oem_iso_path != "" ? [
+    ["-blockdev", "driver=file,node-name=oem_iso_f,filename=${local.win11_oem_iso_path},read-only=on"],
+    ["-blockdev", "driver=raw,node-name=oem_iso_d,file=oem_iso_f,read-only=on"],
+    ["-device", "usb-storage,bus=usb_xhci.0,drive=oem_iso_d,removable=on"]
+  ] : []
   build_complete_dir = var.bento_build_complete_dir != null && var.bento_build_complete_dir != "" ? var.bento_build_complete_dir : "${local.build_dir}/build_complete"
   build_files_dir = var.bento_build_files_dir != null && var.bento_build_files_dir != "" ? var.bento_build_files_dir : "${local.build_dir}/build_files"
 
@@ -208,15 +214,21 @@ locals {
             ["-device", "ramfb"],
             ["-boot", "strict=off"],
             ["-serial", "file:${path.root}/../serial.log"],
-          ] : [
-            ["-device", "qemu-xhci"],
+          ] : concat([
+            ["-device", "pcie-root-port,id=pcie.1,chassis=1,slot=1"],
+            ["-device", "nvme,serial=nvme0,drive=drive0,bus=pcie.1"],
+            ["-device", "qemu-xhci,id=usb_xhci"],
+          ], local.qemu_win11_oem_args, [
+            ["-blockdev", "driver=file,node-name=win11_iso_f,filename=${replace(var.iso_url, "file://", "")},read-only=on"],
+            ["-blockdev", "driver=raw,node-name=win11_iso_d,file=win11_iso_f,read-only=on"],
+            ["-device", "usb-storage,bus=usb_xhci.0,drive=win11_iso_d,removable=on,logical_block_size=2048,physical_block_size=2048"],
             ["-device", "usb-kbd"],
             ["-device", "usb-tablet"],
             ["-device", "ramfb"],
             ["-boot", "strict=off"],
             ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
             ["-serial", "chardev:ser0"],
-          ]
+          ])
         ) : (
           local.host_os == "windows" ? [
             ["-device", "qemu-xhci"],
@@ -392,12 +404,10 @@ locals {
   # Source block common
   cd_files = var.cd_files == null ? (
     var.is_windows ? (
-      var.os_arch == "aarch64" ? null : [
+      fileexists("${path.root}/cidata/virtio-win-guest-tools.exe") ? [
         "${path.root}/cidata/Balloon",
         "${path.root}/cidata/NetKVM",
         "${path.root}/cidata/pvpanic",
-        "${path.root}/cidata/qemupciserial",
-        "${path.root}/cidata/qxldod",
         "${path.root}/cidata/viofs",
         "${path.root}/cidata/viogpudo",
         "${path.root}/cidata/vioinput",
@@ -407,26 +417,24 @@ locals {
         "${path.root}/cidata/vioserial",
         "${path.root}/cidata/viostor",
         "${path.root}/cidata/virtio-win-guest-tools.exe",
-      ]
+      ] : null
     ) : null
   ) : var.cd_files
   cd_label = var.cd_label == null ? (
     var.is_windows ? "OEMDRV" : "cidata"
   ) : var.cd_label
   cd_content = var.cd_content == null ? (
-    var.is_windows ? (
-      var.os_arch == "aarch64" ? null : {
-        "Autounattend.xml" = templatefile(
-          var.os_arch == "x86_64" ? (
-            var.hyperv_generation == 2 ? "win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml" : "win_answer_files/${var.os_version}/Autounattend.xml"
-          ) : "win_answer_files/${var.os_version}/arm64/Autounattend.xml",
-          { windows_product_key = var.windows_product_key }
-        ),
-        "SetupComplete.cmd" = file(
-          var.os_arch == "x86_64" ? "win_answer_files/${var.os_version}/SetupComplete.cmd" : "win_answer_files/${var.os_version}/arm64/SetupComplete.cmd"
-        )
-      }
-    ) : null
+    var.is_windows ? {
+      "Autounattend.xml" = templatefile(
+        var.os_arch == "x86_64" ? (
+          var.hyperv_generation == 2 ? "win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml" : "win_answer_files/${var.os_version}/Autounattend.xml"
+        ) : "win_answer_files/${var.os_version}/arm64/Autounattend.xml",
+        { windows_product_key = var.windows_product_key }
+      ),
+      "SetupComplete.cmd" = file(
+        var.os_arch == "x86_64" ? "win_answer_files/${var.os_version}/SetupComplete.cmd" : "win_answer_files/${var.os_version}/arm64/SetupComplete.cmd"
+      )
+    } : null
   ) : var.cd_content
   communicator = var.communicator == null ? (
     var.is_windows ? "winrm" : "ssh"

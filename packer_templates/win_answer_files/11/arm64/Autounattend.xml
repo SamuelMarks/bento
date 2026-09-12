@@ -4,8 +4,84 @@
         <component name="Microsoft-Windows-LUA-Settings" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <EnableLUA>false</EnableLUA>
         </component>
+        <component name="Microsoft-Windows-PnpCustomizationsNonWinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <DriverPaths>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="1"><Path>C:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="2"><Path>D:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="3"><Path>D:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="4"><Path>D:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="5"><Path>D:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="6"><Path>D:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="7"><Path>D:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="8"><Path>D:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="9"><Path>D:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="10"><Path>D:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="11"><Path>D:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="12"><Path>D:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="13"><Path>E:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="14"><Path>E:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="15"><Path>E:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="16"><Path>E:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="17"><Path>E:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="18"><Path>E:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="19"><Path>E:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="20"><Path>E:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="21"><Path>E:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="22"><Path>E:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="23"><Path>E:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="24"><Path>F:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="25"><Path>F:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="26"><Path>F:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="27"><Path>F:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="28"><Path>F:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="29"><Path>F:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="30"><Path>F:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="31"><Path>F:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="32"><Path>F:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="33"><Path>F:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="34"><Path>F:\viomem\w11\ARM64</Path></PathAndCredentials>
+            </DriverPaths>
+        </component>
     </settings>
     <settings pass="windowsPE">
+        <component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <DriverPaths>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="1"><Path>C:\drivers</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="2"><Path>D:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="3"><Path>D:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="4"><Path>D:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="5"><Path>D:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="6"><Path>D:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="7"><Path>D:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="8"><Path>D:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="9"><Path>D:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="10"><Path>D:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="11"><Path>D:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="12"><Path>D:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="13"><Path>E:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="14"><Path>E:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="15"><Path>E:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="16"><Path>E:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="17"><Path>E:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="18"><Path>E:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="19"><Path>E:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="20"><Path>E:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="21"><Path>E:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="22"><Path>E:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="23"><Path>E:\viomem\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="24"><Path>F:\viostor\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="25"><Path>F:\NetKVM\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="26"><Path>F:\Balloon\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="27"><Path>F:\pvpanic\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="28"><Path>F:\vioscsi\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="29"><Path>F:\vioserial\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="30"><Path>F:\vioinput\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="31"><Path>F:\viorng\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="32"><Path>F:\viofs\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="33"><Path>F:\viogpudo\w11\ARM64</Path></PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="34"><Path>F:\viomem\w11\ARM64</Path></PathAndCredentials>
+            </DriverPaths>
+        </component>
         <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <SetupUILanguage>
                 <UILanguage>en-US</UILanguage>
@@ -16,7 +92,50 @@
             <UILanguageFallback>en-US</UILanguageFallback>
             <UserLocale>en-US</UserLocale>
         </component>
-        <component name="Microsoft-Windows-Setup" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+        
+                <component name="Microsoft-Windows-Setup" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <RunSynchronous>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>1</Order>
+                    <Path>reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\HwReqChk" /v HwReqChkVars /t REG_MULTI_SZ /s , /d "SQ_SecureBootCapable=TRUE,SQ_SecureBootEnabled=TRUE,SQ_TpmVersion=2,SQ_RamMB=8192," /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>2</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>3</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>4</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>5</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>6</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>7</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassDiskCheck /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>8</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\MoSetup" /v AllowUpgradesWithUnsupportedTPMOrCPU /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>9</Order>
+                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassNRO /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+                <RunSynchronousCommand wcm:action="add">
+                    <Order>10</Order>
+                    <Path>reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f</Path>
+                </RunSynchronousCommand>
+            </RunSynchronous>
             <DiskConfiguration>
                 <Disk wcm:action="add">
                     <CreatePartitions>
@@ -47,9 +166,14 @@
                             <Label>System</Label>
                             <Format>FAT32</Format>
                         </ModifyPartition>
-                        <!-- Format the Windows partition -->
+                        <!-- MSR partition - no format but needs entry -->
                         <ModifyPartition wcm:action="add">
                             <Order>2</Order>
+                            <PartitionID>2</PartitionID>
+                        </ModifyPartition>
+                        <!-- Format the Windows partition -->
+                        <ModifyPartition wcm:action="add">
+                            <Order>3</Order>
                             <PartitionID>3</PartitionID>
                             <Label>Windows</Label>
                             <Format>NTFS</Format>
@@ -72,6 +196,7 @@
                         <DiskID>0</DiskID>
                         <PartitionID>3</PartitionID>
                     </InstallTo>
+                    <Compact>true</Compact>
                 </OSImage>
             </ImageInstall>
             <UserData>
@@ -83,41 +208,10 @@
                 <FullName>vagrant</FullName>
                 <Organization>vagrant</Organization>
             </UserData>
-            <UseConfigurationSet>false</UseConfigurationSet>
-            <RunSynchronous>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>1</Order>
-                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>2</Order>
-                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>3</Order>
-                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>4</Order>
-                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>5</Order>
-                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>6</Order>
-                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassDiskCheck /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>7</Order>
-                    <Path>reg.exe add "HKLM\SYSTEM\Setup\LabConfig" /v BypassNRO /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>8</Order>
-                    <Path>reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-            </RunSynchronous>
+            <DynamicUpdate>
+                <Enable>false</Enable>
+            </DynamicUpdate>
+                        <UseConfigurationSet>false</UseConfigurationSet>
         </component>
     </settings>
     <settings pass="generalize">
@@ -125,14 +219,20 @@
             <SkipRearm>1</SkipRearm>
         </component>
         <component name="Microsoft-Windows-PnpSysprep" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-            <PersistAllDeviceInstalls>false</PersistAllDeviceInstalls>
-            <DoNotCleanUpNonPresentDevices>false</DoNotCleanUpNonPresentDevices>
+            <PersistAllDeviceInstalls>true</PersistAllDeviceInstalls>
+            <DoNotCleanUpNonPresentDevices>true</DoNotCleanUpNonPresentDevices>
         </component>
     </settings>
     <settings pass="specialize">
         <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-            <ComputerName>bento</ComputerName>
+            <ComputerName>vagrant</ComputerName>
             <TimeZone>UTC</TimeZone>
+        </component>
+        <component name="Microsoft-Windows-TerminalServices-LocalSessionManager" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <fDenyTSConnections>false</fDenyTSConnections>
+        </component>
+        <component name="Microsoft-Windows-TerminalServices-RDP-WinStationExtensions" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <UserAuthentication>0</UserAuthentication>
         </component>
         <component name="Microsoft-Windows-SystemRestore-Main" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <DisableSR>1</DisableSR>
@@ -152,113 +252,20 @@
                     <Group>Remote Administration</Group>
                     <Profile>all</Profile>
                 </FirewallGroup>
+                <FirewallGroup wcm:action="add" wcm:keyValue="RemoteDesktop">
+                    <Active>true</Active>
+                    <Group>Remote Desktop</Group>
+                    <Profile>all</Profile>
+                </FirewallGroup>
             </FirewallGroups>
-        </component>
-        <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-            <SkipAutoActivation>true</SkipAutoActivation>
         </component>
         <component name="Microsoft-Windows-SQMApi" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <CEIPEnabled>0</CEIPEnabled>
         </component>
+        <component name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <SkipAutoActivation>true</SkipAutoActivation>
+        </component>
         <component name="Microsoft-Windows-Deployment" processorArchitecture="arm64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-            <RunSynchronous>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>1</Order>
-                    <Path>cmd.exe /c "if not exist C:\Windows\Setup\Scripts mkdir C:\Windows\Setup\Scripts &amp; for %d in (c d e f g h i) do if exist %d:\SetupComplete.cmd copy /y %d:\SetupComplete.cmd C:\Windows\Setup\Scripts\SetupComplete.cmd"</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>2</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SYSTEM\Setup\MoSetup" /v AllowUpgradesWithUnsupportedTPMOrCPU /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>3</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 0 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>4</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>5</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>6</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowBasic /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>7</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>8</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowBasic /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>9</Order>
-                    <Path>cmd.exe /c reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>10</Order>
-                    <Path>cmd.exe /c netsh advfirewall firewall add rule name="Port 5985" dir=in action=allow protocol=TCP localport=5985</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>11</Order>
-                    <Path>cmd.exe /c sc.exe config winrm start= auto</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>12</Order>
-                    <Path>cmd.exe /c net.exe start winrm</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>13</Order>
-                    <Path>cmd.exe /c winrm quickconfig -q</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>14</Order>
-                    <Path>cmd.exe /c winrm quickconfig -transport:http</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>15</Order>
-                    <Path>cmd.exe /c winrm set winrm/config @{MaxTimeoutms="1800000"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>16</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>17</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted="true"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>18</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/service/auth @{Basic="true"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>19</Order>
-                    <Path>cmd.exe /c winrm set winrm/config/client/auth @{Basic="true"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>20</Order>
-                    <Path>cmd.exe /c winrm set "winrm/config/listener?Address=*+Transport=HTTP" @{Port="5985"}</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>21</Order>
-                    <Path>cmd.exe /c powercfg.exe /hibernate off</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>22</Order>
-                    <Path>cmd.exe /c bcdedit.exe /ems {current} off</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>23</Order>
-                    <Path>cmd.exe /c bcdedit.exe /bootems off</Path>
-                </RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add">
-                    <Order>24</Order>
-                    <Path>cmd.exe /c "echo [WIN11-SERIAL] Specialize Pass WinRM and Serial Ready > COM1"</Path>
-                </RunSynchronousCommand>
-            </RunSynchronous>
         </component>
     </settings>
     <settings pass="oobeSystem">
@@ -311,151 +318,192 @@
                 </Password>
                 <Username>vagrant</Username>
                 <Enabled>true</Enabled>
+                <LogonCount>5</LogonCount>
             </AutoLogon>
-            <FirstLogonCommands>                <SynchronousCommand wcm:action="add">
+            <FirstLogonCommands>
+                <SynchronousCommand wcm:action="add">
                     <Order>1</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (c d e f g h i) do if exist %d:\NetKVM\w11\ARM64\netkvm.inf pnputil.exe /add-driver %d:\NetKVM\w11\ARM64\netkvm.inf /install"</CommandLine>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (C D E F G H I J K) do if exist %d:\NetKVM\w11\ARM64\netkvm.inf pnputil.exe /add-driver %d:\NetKVM\w11\ARM64\*.inf /install"</CommandLine>
                     <Description>Install NetKVM Driver</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (c d e f g h i) do if exist %d:\viostor\w11\ARM64\viostor.inf pnputil.exe /add-driver %d:\viostor\w11\ARM64\viostor.inf /install"</CommandLine>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (C D E F G H I J K) do if exist %d:\viostor\w11\ARM64\viostor.inf pnputil.exe /add-driver %d:\viostor\w11\ARM64\*.inf /install"</CommandLine>
                     <Description>Install Viostor Driver</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>3</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (c d e f g h i) do if exist %d:\Balloon\w11\ARM64\balloon.inf pnputil.exe /add-driver %d:\Balloon\w11\ARM64\balloon.inf /install"</CommandLine>
-                    <Description>Install Balloon Driver</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (C D E F G H I J K) do if exist %d:\vioscsi\w11\ARM64\vioscsi.inf pnputil.exe /add-driver %d:\vioscsi\w11\ARM64\*.inf /install"</CommandLine>
+                    <Description>Install Vioscsi Driver</Description>
                 </SynchronousCommand>
-
                 <SynchronousCommand wcm:action="add">
                     <Order>4</Order>
-                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"</CommandLine>
-                    <Description>Set Execution Policy 64 Bit</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (C D E F G H I J K) do if exist %d:\Balloon\w11\ARM64\balloon.inf pnputil.exe /add-driver %d:\Balloon\w11\ARM64\*.inf /install"</CommandLine>
+                    <Description>Install Balloon Driver</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>5</Order>
-                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'SilentlyContinue'; Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private"</CommandLine>
-                    <Description>Set Private Network Category</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c "for %d in (C D E F G H I J K) do if exist %d:\vioserial\w11\ARM64\vioser.inf pnputil.exe /add-driver %d:\vioserial\w11\ARM64\*.inf /install"</CommandLine>
+                    <Description>Install Vioserial Driver</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>6</Order>
-                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'SilentlyContinue'; Set-NetFirewallRule -Name 'WINRM-HTTP-In-TCP' -RemoteAddress Any; New-NetFirewallRule -DisplayName 'WinRM HTTP' -Name 'WINRM-HTTP-In-TCP' -Profile Any -LocalPort 5985 -Protocol TCP -Action Allow -Direction Inbound"</CommandLine>
-                    <Description>Allow WinRM firewall rule</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant /active:yes</CommandLine>
+                    <Description>Enable vagrant user</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>7</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -q</CommandLine>
-                    <Description>winrm quickconfig -q</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant vagrant</CommandLine>
+                    <Description>Set vagrant password</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>8</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -transport:http</CommandLine>
-                    <Description>winrm quickconfig -transport:http</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>9</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config @{MaxTimeoutms="1800000"}</CommandLine>
-                    <Description>WinRM MaxTimeoutms</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>10</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}</CommandLine>
-                    <Description>WinRM MaxMemoryPerShellMB</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>11</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted="true"}</CommandLine>
-                    <Description>WinRM AllowUnencrypted</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>12</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service/auth @{Basic="true"}</CommandLine>
-                    <Description>WinRM auth Basic</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>13</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/client/auth @{Basic="true"}</CommandLine>
-                    <Description>WinRM client auth Basic</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>14</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/listener?Address=*+Transport=HTTP @{Port="5985"}</CommandLine>
-                    <Description>WinRM listener Address/Port</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>15</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c netsh advfirewall firewall add rule name="Port 5985" dir=in action=allow protocol=TCP localport=5985</CommandLine>
-                    <Description>Open Port 5985 in Firewall</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>16</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c net stop winrm</CommandLine>
-                    <Description>Stop WinRM</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>17</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c sc config winrm start= auto</CommandLine>
-                    <Description>WinRM Autostart</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>18</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c net start winrm</CommandLine>
-                    <Description>Start WinRM</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <Order>19</Order>
                     <CommandLine>%windir%\System32\cmd.exe /c net.exe user vagrant /expires:never</CommandLine>
                     <Description>Disable password expiration for vagrant user</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /t REG_SZ /d "vagrant" /f</CommandLine>
-                    <Order>20</Order>
-                    <Description>Enable AutoLogon DefaultPassword</Description>
+                    <Order>9</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user Administrator /active:yes</CommandLine>
+                    <Description>Enable Administrator user</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 1 /f</CommandLine>
+                    <Order>10</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user Administrator vagrant</CommandLine>
+                    <Description>Set Administrator password</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>11</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe user Administrator /expires:never</CommandLine>
+                    <Description>Disable password expiration for Administrator user</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>12</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe localgroup Administrators vagrant /add</CommandLine>
+                    <Description>Add vagrant to Administrators</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>13</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe localgroup Administrators Administrator /add</CommandLine>
+                    <Description>Add Administrator to Administrators</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>14</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c net.exe accounts /lockoutthreshold:0</CommandLine>
+                    <Description>Disable Account Lockout</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>15</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f</CommandLine>
+                    <Description>Disable Remote UAC</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>16</Order>
+                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"</CommandLine>
+                    <Description>Set Execution Policy 64 Bit</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>17</Order>
+                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private"</CommandLine>
+                    <Description>Sets detected network connections to private</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>18</Order>
+                    <CommandLine>%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; Set-NetFirewallRule -Name 'WINRM-HTTP-In-TCP' -RemoteAddress Any; New-NetFirewallRule -DisplayName 'WinRM HTTP' -Name 'WINRM-HTTP-In-TCP' -Profile Any -LocalPort 5985 -Protocol TCP -Action Allow -Direction Inbound"</CommandLine>
+                    <Description>Allow WinRM firewall rule</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>19</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c netsh advfirewall firewall add rule name="Port 5985" dir=in action=allow protocol=TCP localport=5985</CommandLine>
+                    <Description>Open Port 5985 in Firewall</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>20</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -q</CommandLine>
+                    <Description>winrm quickconfig</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
                     <Order>21</Order>
-                    <Description>Enable AutoLogon AutoAdminLogon</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm quickconfig -transport:http</CommandLine>
+                    <Description>winrm quickconfig -transport:http</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>22</Order>
-                    <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 1 /f</CommandLine>
-                    <Description>Enable LocalAccountTokenFilterPolicy</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config @{MaxTimeoutms="1800000"}</CommandLine>
+                    <Description>WinRM MaxTimeoutms</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>23</Order>
-                    <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowBasic /t REG_DWORD /d 1 /f</CommandLine>
-                    <Description>Allow Basic Auth Service Policy</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB="2048"}</CommandLine>
+                    <Description>WinRM MaxMemoryPerShellMB</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>24</Order>
-                    <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f</CommandLine>
-                    <Description>Allow Unencrypted Traffic Service Policy</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service @{AllowUnencrypted="true"}</CommandLine>
+                    <Description>WinRM AllowUnencrypted</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>25</Order>
-                    <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowBasic /t REG_DWORD /d 1 /f</CommandLine>
-                    <Description>Allow Basic Auth Client Policy</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service/auth @{Basic="true"}</CommandLine>
+                    <Description>WinRM auth Basic</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>26</Order>
-                    <CommandLine>%SystemRoot%\System32\reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f</CommandLine>
-                    <Description>Allow Unencrypted Traffic Client Policy</Description>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/service/auth @{Negotiate="true"}</CommandLine>
+                    <Description>WinRM auth Negotiate</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>27</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/client/auth @{Basic="true"}</CommandLine>
+                    <Description>WinRM client auth Basic</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>28</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set winrm/config/client/auth @{Negotiate="true"}</CommandLine>
+                    <Description>WinRM client auth Negotiate</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>29</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c winrm set "winrm/config/listener?Address=*+Transport=HTTP" @{Port="5985"}</CommandLine>
+                    <Description>WinRM listener Address/Port</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>30</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c sc config winrm start= auto</CommandLine>
+                    <Description>WinRM Autostart</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>31</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c "net stop winrm &amp; net start winrm || exit 0"</CommandLine>
+                    <Description>Restart WinRM Service</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>32</Order>
+                    <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /t REG_SZ /d "vagrant" /f</CommandLine>
+                    <Description>Enable AutoLogon DefaultPassword</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>33</Order>
+                    <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultUsername /t REG_SZ /d "vagrant" /f</CommandLine>
+                    <Description>Enable AutoLogon DefaultUsername</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>34</Order>
+                    <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 1 /f</CommandLine>
+                    <Description>Enable AutoLogon AutoAdminLogon</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>35</Order>
                     <CommandLine>%SystemRoot%\System32\bcdedit.exe /ems {current} off</CommandLine>
                     <Description>Disable Kernel EMS to release COM1</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>28</Order>
+                    <Order>36</Order>
                     <CommandLine>%SystemRoot%\System32\bcdedit.exe /bootems off</CommandLine>
                     <Description>Disable Boot EMS</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>29</Order>
-                    <CommandLine>%windir%\System32\cmd.exe /c "echo [WIN11-SERIAL] WinRM and Serial Ready > COM1"</CommandLine>
+                    <Order>37</Order>
+                    <CommandLine>%windir%\System32\cmd.exe /c "echo [WIN11-SERIAL] WinRM and Serial Ready > COM1 || exit 0"</CommandLine>
                     <Description>Notify COM1 Serial</Description>
                 </SynchronousCommand>
             </FirstLogonCommands>

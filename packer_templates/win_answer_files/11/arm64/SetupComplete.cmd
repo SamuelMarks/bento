@@ -1,11 +1,11 @@
 @echo off
 :: Windows 11 Post-Setup Bootstrap Script (runs as NT AUTHORITY\SYSTEM)
-echo [WIN11-SETUPCOMPLETE] Starting SetupComplete bootstrap... > COM1
+echo [WIN11-SETUPCOMPLETE] Starting SetupComplete bootstrap... > COM1 2>nul || ver >nul
 
 :: Install VirtIO drivers from OEMDRV or attached media
-for %%d in (C D E F G H) do (
+for %%d in (C D E F G H I J K) do (
     if exist %%d:\NetKVM\w11\ARM64\netkvm.inf (
-        echo [WIN11-SETUPCOMPLETE] Installing drivers from %%d: > COM1
+        echo [WIN11-SETUPCOMPLETE] Installing drivers from %%d: > COM1 2>nul || ver >nul
         pnputil.exe /add-driver %%d:\NetKVM\w11\ARM64\netkvm.inf /install
         pnputil.exe /add-driver %%d:\viostor\w11\ARM64\viostor.inf /install
         pnputil.exe /add-driver %%d:\vioscsi\w11\ARM64\vioscsi.inf /install
@@ -16,10 +16,13 @@ for %%d in (C D E F G H) do (
 )
 
 :: Ensure Administrator and vagrant accounts are enabled, in Administrators group, with password vagrant
+net.exe accounts /lockoutthreshold:0
 net.exe user Administrator /active:yes
 net.exe user Administrator vagrant
+net.exe user Administrator /expires:never
 net.exe user vagrant /active:yes
 net.exe user vagrant vagrant
+net.exe user vagrant /expires:never
 net.exe localgroup Administrators vagrant /add
 net.exe localgroup Administrators Administrator /add
 
@@ -34,7 +37,7 @@ reg.exe add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowUnen
 
 :: Set network category to private
 powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"
-powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private"
+powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private"
 
 :: Firewall
 netsh advfirewall firewall add rule name="Port 5985" dir=in action=allow protocol=TCP localport=5985
@@ -51,7 +54,9 @@ call %windir%\system32\winrm.cmd set winrm/config/winrs @{MaxConcurrentUsers="50
 call %windir%\system32\winrm.cmd set winrm/config/winrs @{MaxProcessesPerShell="50"}
 call %windir%\system32\winrm.cmd set winrm/config/service @{AllowUnencrypted="true"}
 call %windir%\system32\winrm.cmd set winrm/config/service/auth @{Basic="true"}
+call %windir%\system32\winrm.cmd set winrm/config/service/auth @{Negotiate="true"}
 call %windir%\system32\winrm.cmd set winrm/config/client/auth @{Basic="true"}
+call %windir%\system32\winrm.cmd set winrm/config/client/auth @{Negotiate="true"}
 call %windir%\system32\winrm.cmd set "winrm/config/listener?Address=*+Transport=HTTP" @{Port="5985"}
 
 :: Restart WinRM to apply policies
@@ -63,5 +68,5 @@ sc.exe start winrm
 bcdedit.exe /ems {current} off
 bcdedit.exe /bootems off
 
-echo [WIN11-SETUPCOMPLETE] SetupComplete complete, WinRM ready on 5985 > COM1
+echo [WIN11-SETUPCOMPLETE] SetupComplete complete, WinRM ready on 5985 > COM1 2>nul || ver >nul
 exit 0

@@ -76,7 +76,8 @@ Vagrant.configure(2) do |config|
       extra_args = []
       extra_args.push("-bios", bios_path) if bios_path
       extra_args.push(
-        "-device", "nvme,serial=nvme0,drive=disk0",
+        "-device", "pcie-root-port,id=pcie.1,chassis=1,slot=1",
+        "-device", "nvme,serial=nvme0,drive=disk0,bus=pcie.1",
         "-device", "ramfb",
         "-device", "qemu-xhci",
         "-device", "usb-kbd",
