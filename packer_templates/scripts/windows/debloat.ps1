@@ -1,24 +1,32 @@
 <#
 .SYNOPSIS
-  Debloat script for Windows 11 / Windows Server based on tiny11builder concepts.
+  Debloat script for Windows 11 based on tiny11builder concepts.
 .DESCRIPTION
-  This script removes unnecessary AppxPackages, disables telemetry, disables reserved storage,
-  and optimizes services for a minimal Vagrant box footprint.
+  Removes bloatware Appx/Provisioned packages, disables telemetry, disables reserved storage,
+  shuts down background update download services, and minimizes disk footprint.
 #>
 
-Write-Host "Starting Windows Debloat Process..." -ForegroundColor Cyan
+function Write-SerialLog {
+    param([string]$message, [string]$color = "Yellow")
+    Write-Host $message -ForegroundColor $color
+    try {
+        cmd.exe /c "echo [WIN11-DEBLOAT] $message > COM1" 2>$null
+    } catch { }
+}
 
-# Disable Reserved Storage to reclaim ~7 GB
+Write-SerialLog "Starting Windows 11 Debloat Process..." "Cyan"
+
+# 1. Disable Reserved Storage to immediately reclaim ~7 GB of disk space
 try {
-    Write-Host "Disabling Reserved Storage..." -ForegroundColor Yellow
+    Write-SerialLog "Disabling Reserved Storage (reclaims ~7GB)..."
     DISM.exe /Online /Set-ReservedStorageState /State:Disabled
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" -Name "ShippedWithReserves" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" -Name "PassedPolicy" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
 } catch {
-    Write-Host "WARN: Could not disable reserved storage: $_"
+    Write-SerialLog "WARN: Could not disable reserved storage: $_"
 }
 
-# Remove unnecessary Appx and Provisioned packages
+# 2. Comprehensive Appx and Provisioned Package Removal
 $packagesToRemove = @(
     "Clipchamp.Clipchamp",
     "Microsoft.549981C3F5F10",
@@ -71,25 +79,56 @@ $packagesToRemove = @(
     "MicrosoftCorporationII.QuickAssist",
     "MicrosoftTeams",
     "MSTeams",
-    "microsoft.windowscommunicationsapps"
+    "microsoft.windowscommunicationsapps",
+    "MicrosoftWindows.Client.WebExperience"
 )
 
-Write-Host "Removing Appx Packages..." -ForegroundColor Yellow
+Write-SerialLog "Removing non-essential AppX and provisioned packages..."
 foreach ($package in $packagesToRemove) {
-    Get-AppxPackage -Name $package -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
-    Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq $package -or $_.PackageName -like "*$package*" } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+    Get-AppxPackage -Name "*$package*" -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+    Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like "*$package*" -or $_.PackageName -like "*$package*" } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
 }
 
-# Disable Telemetry and Diagnostics
-Write-Host "Disabling Telemetry and Diagnostics..." -ForegroundColor Yellow
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -ErrorAction SilentlyContinue
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "MaxTelemetryAllowed" -Value 0 -Type DWord -ErrorAction SilentlyContinue
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+# Wildcard patterns for any residual bloat
+$bloatPatterns = @(
+    "*Xbox*",
+    "*Zune*",
+    "*Bing*",
+    "*Solitaire*",
+    "*FeedbackHub*",
+    "*GetHelp*",
+    "*YourPhone*",
+    "*Clipchamp*",
+    "*Copilot*",
+    "*WebExperience*",
+    "*OutlookForWindows*"
+)
+foreach ($pattern in $bloatPatterns) {
+    Get-AppxPackage -Name $pattern -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+    Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -like $pattern -or $_.PackageName -like $pattern } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+}
 
-# Disable Crash Dumps
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "CrashDumpEnabled" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+# 3. Disable Telemetry, Diagnostics & Crash Dumps
+Write-SerialLog "Disabling Telemetry, Diagnostics, and Crash Dumps..."
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "MaxTelemetryAllowed" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "CrashDumpEnabled" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
 
-# Disable Telemetry, Search Indexing, and Background Services
+# 4. Disable Cloud Content, Consumer Suggestions, and Store Auto-Downloads
+Write-SerialLog "Disabling Cloud Content and Consumer Features..."
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Force -ErrorAction SilentlyContinue | Out-Null
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Force -ErrorAction SilentlyContinue | Out-Null
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -Value 2 -Type DWord -Force -ErrorAction SilentlyContinue
+
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Force -ErrorAction SilentlyContinue | Out-Null
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "DisableWebSearch" -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "ConnectedSearchUseWeb" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+
+# 5. Disable Unnecessary Background Services
 $servicesToDisable = @(
     "DiagTrack",        # Connected User Experiences and Telemetry
     "dmwappushservice", # WAP Push Message Routing Service
@@ -104,18 +143,30 @@ $servicesToDisable = @(
     "XboxNetApiSvc"     # Xbox Live Networking Service
 )
 
-Write-Host "Disabling Unnecessary Services..." -ForegroundColor Yellow
+Write-SerialLog "Disabling telemetry, search indexing, and background services..."
 foreach ($service in $servicesToDisable) {
     Set-Service -Name $service -StartupType Disabled -ErrorAction SilentlyContinue
     Stop-Service -Name $service -Force -ErrorAction SilentlyContinue
 }
 
-# Remove OneDrive if present
-Write-Host "Attempting to remove OneDrive..." -ForegroundColor Yellow
+# 6. Completely Remove OneDrive
+Write-SerialLog "Uninstalling OneDrive..."
 if (Test-Path "$env:SystemRoot\SysWOW64\OneDriveSetup.exe") {
-    Start-Process "$env:SystemRoot\SysWOW64\OneDriveSetup.exe" -ArgumentList "/uninstall" -Wait -NoNewWindow
+    Start-Process "$env:SystemRoot\SysWOW64\OneDriveSetup.exe" -ArgumentList "/uninstall" -Wait -NoNewWindow -ErrorAction SilentlyContinue
 } elseif (Test-Path "$env:SystemRoot\System32\OneDriveSetup.exe") {
-    Start-Process "$env:SystemRoot\System32\OneDriveSetup.exe" -ArgumentList "/uninstall" -Wait -NoNewWindow
+    Start-Process "$env:SystemRoot\System32\OneDriveSetup.exe" -ArgumentList "/uninstall" -Wait -NoNewWindow -ErrorAction SilentlyContinue
 }
 
-Write-Host "Debloat complete." -ForegroundColor Green
+# Remove OneDrive residual folders
+@(
+    "$env:LOCALAPPDATA\Microsoft\OneDrive",
+    "$env:PROGRAMDATA\Microsoft OneDrive",
+    "C:\OneDriveTemp"
+) | ForEach-Object {
+    if (Test-Path $_) {
+        Remove-Item -Path $_ -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Write-SerialLog "Debloat complete." "Green"
+exit 0

@@ -5,16 +5,20 @@ $ErrorActionPreference = 'Stop'
 trap {
     Write-Host
     Write-Host "ERROR: $_"
-    ($_.ScriptStackTrace -split '?
-') -replace '^(.*)$','ERROR: $1' | Write-Host
-    ($_.Exception.ToString() -split '?
-') -replace '^(.*)$','ERROR EXCEPTION: $1' | Write-Host
+    ($_.ScriptStackTrace -split "`r`n") -replace '^(.*)$','ERROR: $1' | Write-Host
+    ($_.Exception.ToString() -split "`r`n") -replace '^(.*)$','ERROR EXCEPTION: $1' | Write-Host
     Write-Host
     Exit 1
 }
 
 # Enable TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+Write-Host "Deleting residual pagefile and swapfile..."
+try {
+    Remove-Item -Path "C:\pagefile.sys" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "C:\swapfile.sys" -Force -ErrorAction SilentlyContinue
+} catch { }
 
 Write-Host "Enabling CompactOS compression on system binaries..."
 try {
@@ -27,6 +31,7 @@ Write-Host "Compressing static program and system directories using LZX..."
 @(
     "C:\Program Files",
     "C:\Program Files (x86)",
+    "C:\ProgramData",
     "C:\Windows\System32\DriverStore\FileRepository",
     "C:\Windows\System32\WindowsPowerShell",
     "C:\Windows\Microsoft.NET",
@@ -70,37 +75,68 @@ try {
 }
 
 Write-Host "Zeroing free disk space for maximum box compression..."
-$FilePath = "C:\zero.tmp"
-$ArraySize = 4MB
-$ZeroArray = [byte[]]::new($ArraySize)
-
+$sdeleteDownloaded = $false
 try {
-    $Stream = [System.IO.File]::OpenWrite($FilePath)
-    try {
-        while ($true) {
-            $Stream.Write($ZeroArray, 0, $ZeroArray.Length)
-        }
-    } catch [System.IO.IOException] {
-        # Disk full reached - expected
-        Write-Host "Free disk space successfully filled with zeroes."
-    } finally {
-        if ($Stream) {
-            $Stream.Flush()
-            $Stream.Close()
-            $Stream.Dispose()
-        }
+    $sdeleteUrl = if ([System.Environment]::Is64BitOperatingSystem -and $env:PROCESSOR_ARCHITECTURE -eq 'ARM64') {
+        "https://live.sysinternals.com/sdelete64a.exe"
+    } elseif ([System.Environment]::Is64BitOperatingSystem) {
+        "https://live.sysinternals.com/sdelete64.exe"
+    } else {
+        "https://live.sysinternals.com/sdelete.exe"
     }
+    Write-Host "Downloading SDelete from Sysinternals ($sdeleteUrl)..."
+    Invoke-WebRequest -Uri $sdeleteUrl -OutFile "$env:TEMP\sdelete.exe" -UseBasicParsing -ErrorAction Stop
+    $sdeleteDownloaded = $true
 } catch {
-    Write-Host "Zeroing caught error: $_"
-} finally {
-    if (Test-Path $FilePath) {
-        Remove-Item -Force $FilePath -ErrorAction SilentlyContinue
+    Write-Host "Failed to download SDelete: $_"
+}
+
+if ($sdeleteDownloaded) {
+    try {
+        Write-Host "Running SDelete to zero free space and MFT..."
+        Start-Process -FilePath "$env:TEMP\sdelete.exe" -ArgumentList "-z", "-accepteula", "C:" -Wait -NoNewWindow
+    } catch {
+        Write-Host "SDelete failed, falling back to manual zeroing."
+        $sdeleteDownloaded = $false
+    }
+}
+
+if (-not $sdeleteDownloaded) {
+    $FilePath = "C:\zero.tmp"
+    $ArraySize = 4MB
+    $ZeroArray = [byte[]]::new($ArraySize)
+
+    try {
+        $Stream = [System.IO.File]::OpenWrite($FilePath)
+        try {
+            while ($true) {
+                $Stream.Write($ZeroArray, 0, $ZeroArray.Length)
+            }
+        } catch [System.IO.IOException] {
+            # Disk full reached - expected
+            Write-Host "Free disk space successfully filled with zeroes."
+        } finally {
+            if ($Stream) {
+                $Stream.Flush()
+                $Stream.Close()
+                $Stream.Dispose()
+            }
+        }
+    } catch {
+        Write-Host "Zeroing caught error: $_"
+    } finally {
+        if (Test-Path $FilePath) {
+            Remove-Item -Force $FilePath -ErrorAction SilentlyContinue
+        }
     }
 }
 
 Write-Host "ReTrimming Drive to unmap zeroed free blocks at hypervisor level..."
 try {
-    Optimize-Volume -DriveLetter C -ReTrim -Verbose
+    Optimize-Volume -DriveLetter C -ReTrim -Verbose -ErrorAction SilentlyContinue
 } catch {
     Write-Host "ReTrim warning: $_"
 }
+
+Write-Host "Disk optimization complete."
+exit 0

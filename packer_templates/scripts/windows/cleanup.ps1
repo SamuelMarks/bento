@@ -2,18 +2,26 @@ Set-StrictMode -Version Latest
 $ProgressPreference = 'SilentlyContinue'
 $ErrorActionPreference = 'Stop'
 
+function Write-SerialLog {
+    param([string]$message)
+    Write-Host $message
+    try {
+        cmd.exe /c "echo [WIN11-CLEANUP] $message > COM1" 2>$null
+    } catch { }
+}
+
 trap {
     Write-Host
     Write-Host "ERROR: $_"
-    ($_.ScriptStackTrace -split '?
-') -replace '^(.*)$','ERROR: $1' | Write-Host
-    ($_.Exception.ToString() -split '?
-') -replace '^(.*)$','ERROR EXCEPTION: $1' | Write-Host
+    ($_.ScriptStackTrace -split "`r`n") -replace '^(.*)$','ERROR: $1' | Write-Host
+    ($_.Exception.ToString() -split "`r`n") -replace '^(.*)$','ERROR EXCEPTION: $1' | Write-Host
     Write-Host
     Exit 1
 }
 
-Write-Host 'Run Cleanmgr automation...'
+Write-SerialLog "Starting Windows 11 Deep Cleanup Process..."
+
+Write-SerialLog "Executing Cleanmgr automation on all volume caches..."
 try {
     $cleanMgrFlags = @(
         'BranchCache',
@@ -54,26 +62,25 @@ try {
         }
     }
 
-    Write-Host 'Starting CleanMgr.exe...'
     Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -Wait -ErrorAction SilentlyContinue
     Get-Process -Name cleanmgr,dismhost -ErrorAction SilentlyContinue | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue
 } catch {
-    Write-Host "CleanMgr warning: $_"
+    Write-SerialLog "CleanMgr note: $_"
 }
 
-Write-Host 'Disable and remove Windows Recovery Environment (WinRE)...'
+Write-SerialLog "Disabling and removing Windows Recovery Environment (WinRE)..."
 try {
     reagentc.exe /disable
     Remove-Item -Path "C:\Windows\System32\Recovery\Winre.wim" -Force -ErrorAction SilentlyContinue
     Remove-Item -Path "C:\Recovery" -Recurse -Force -ErrorAction SilentlyContinue
 } catch { }
 
-Write-Host 'Clean event logs...'
+Write-SerialLog "Clearing Windows Event Logs..."
 try {
     wevtutil el | ForEach-Object { wevtutil cl "$_" 2>$null }
 } catch { }
 
-Write-Host 'Stopping services that hold temporary and update files...'
+Write-SerialLog "Stopping background update and caching services..."
 function Stop-ServiceForReal($name) {
     try {
         Stop-Service -Name $name -Force -ErrorAction SilentlyContinue
@@ -86,7 +93,7 @@ Stop-ServiceForReal DoSvc
 Stop-ServiceForReal SysMain
 Stop-ServiceForReal WSearch
 
-Write-Host 'Cleaning temporary, cache, and log files...'
+Write-SerialLog "Purging temporary files, caches, and logs..."
 @(
     "$env:LOCALAPPDATA\Temp\*",
     "$env:windir\Temp\*",
@@ -109,7 +116,7 @@ Write-Host 'Cleaning temporary, cache, and log files...'
     "C:\ProgramData\Microsoft\Windows Defender\Definition Updates\Backup\*",
     "C:\ProgramData\Package Cache\*",
     "C:\Program Files (x86)\Microsoft\EdgeUpdate\Download\*",
-    "C:\Users\*\AppData\Local\Microsoft\Windows\Explorer\thumbcache_*.db",
+    'C:\Users\*\AppData\Local\Microsoft\Windows\Explorer\thumbcache_*.db',
     "C:\Users\*\AppData\Local\Microsoft\Windows\Explorer\iconcache_*.db",
     "C:\Users\*\AppData\Local\Microsoft\Windows\INetCache\*",
     "C:\Users\*\AppData\Local\Microsoft\Windows\History\*",
@@ -127,23 +134,28 @@ Write-Host 'Cleaning temporary, cache, and log files...'
     }
 }
 
-Write-Host 'Cleaning and resetting WinSxS Component Store...'
+Write-SerialLog "Cleaning and resetting WinSxS Component Store..."
 try {
     dism.exe /Online /Cleanup-Image /StartComponentCleanup /ResetBase
     dism.exe /Online /Cleanup-Image /SPSuperseded
 } catch {
-    Write-Host "Component cleanup non-fatal note: $_"
+    Write-SerialLog "Component cleanup note: $_"
 }
 
-Write-Host 'Clearing disabled features payloads...'
+Write-SerialLog "Removing disabled features payloads..."
 try {
     Get-WindowsOptionalFeature -Online | Where-Object {$_.State -eq 'Disabled'} | ForEach-Object {
         dism.exe /Online /Quiet /Disable-Feature "/FeatureName:$($_.FeatureName)" /Remove 2>$null
     }
 } catch { }
 
-Write-Host 'Remove pagefile on shutdown (recreated automatically on boot)...'
+Write-SerialLog "Zeroing and purging pagefile/swapfile for clean shutdown..."
 try {
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name PagingFiles -Value @('') -Type MultiString -Force -ErrorAction SilentlyContinue | Out-Null
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name ClearPageFileAtShutdown -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue | Out-Null
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' -Name SwapfileControl -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue | Out-Null
+    Remove-Item -Path "C:\swapfile.sys" -Force -ErrorAction SilentlyContinue
 } catch { }
+
+Write-SerialLog "Cleanup completed successfully."
+exit 0

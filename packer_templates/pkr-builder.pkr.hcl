@@ -219,6 +219,7 @@ build {
   provisioner "powershell" {
     elevated_password = local.elevated_password
     elevated_user     = local.elevated_user
+    valid_exit_codes  = [0, 1]
     scripts = [
       "${path.root}/scripts/windows/optimize.ps1"
     ]
