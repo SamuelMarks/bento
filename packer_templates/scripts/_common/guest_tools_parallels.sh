@@ -14,10 +14,9 @@ parallels-iso|parallels-pvm|parallels-ipsw)
   if [ "$OS_NAME" = "FreeBSD" ]; then
     pkg update
     pkg install -y parallels-tools
-  elif [ "$OS_NAME" = "Darwin" ]; then
-    installer -pkg /Volumes/Parallels\ Tools/Install.app/Contents/Resources/Install.mpkg -target /
-    # This usually works but gives a failed to eject error
-    hdiutil detach /Volumes/Parallels\ Tools || echo "exit code $? is suppressed"
+  elif [ "$OS_NAME" = "Darwin" ] || [ "$OS_NAME" = "SunOS" ]; then
+    echo "Nothing to do for $OS_NAME"
+    exit 0
   else
     # Check kernel version
     KERNEL_VERSION=$(uname -r | cut -d. -f1,2)

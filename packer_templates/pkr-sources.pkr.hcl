@@ -301,10 +301,10 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
     var.is_windows ? "attach" : "upload"
   ) : var.vbox_guest_additions_mode
   vbox_hard_drive_interface = var.vbox_hard_drive_interface == null ? (
-    var.is_windows ? "sata" : "virtio"
+    var.is_windows || var.os_name == "solaris" || var.os_name == "omnios" ? "sata" : "virtio"
   ) : var.vbox_hard_drive_interface
   vbox_iso_interface = var.vbox_iso_interface == null ? (
-    var.is_windows ? "sata" : "virtio"
+    var.is_windows || var.os_name == "solaris" || var.os_name == "omnios" ? "sata" : "virtio"
   ) : var.vbox_iso_interface
   vboxmanage = var.vboxmanage == null ? (
     var.is_windows ? (
@@ -350,7 +350,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
     )
   ) : var.vboxmanage
   vbox_nic_type = var.vbox_nic_type == null ? (
-    var.os_name == "freebsd" ? "82545EM" : null
+    var.os_name == "freebsd" || var.os_name == "omnios" || var.os_name == "solaris" ? "82540EM" : null
   ) : var.vbox_nic_type
 
   # vmware-iso

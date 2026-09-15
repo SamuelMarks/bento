@@ -30,7 +30,10 @@ qemu_guest_agent_enable="YES"
 EOT
     service qemu-guest-agent start
     return
-  elif [ -f "/bin/dnf" ]; then
+elif [ "$OS_NAME" = "SunOS" ]; then
+  echo "Nothing to do for $OS_NAME"
+  return 0 2>/dev/null || exit 0
+elif [ -f "/bin/dnf" ]; then
     dnf install -y --skip-broken spice-vdagent qemu-guest-agent spice-webdavd
     sed -i 's/^BLACKLIST_RPC=/# BLACKLIST_RPC=/' /etc/sysconfig/qemu-ga # RHEL 8 instances
     sed -i 's/^FILTER_RPC_ARGS=/# FILTER_RPC_ARGS=/' /etc/sysconfig/qemu-ga # RHEL 9+ instances
@@ -94,7 +97,10 @@ qemu_guest_agent_enable="YES"
 EOT
     service qemu-guest-agent start
     return
-  elif [ -f "/bin/dnf" ]; then
+elif [ "$OS_NAME" = "SunOS" ]; then
+  echo "Nothing to do for $OS_NAME"
+  return 0 2>/dev/null || exit 0
+elif [ -f "/bin/dnf" ]; then
     dnf install -y --skip-broken qemu-guest-agent
     sed -i 's/^BLACKLIST_RPC=/# BLACKLIST_RPC=/' /etc/sysconfig/qemu-ga # RHEL 8 instances
     sed -i 's/^FILTER_RPC_ARGS=/# FILTER_RPC_ARGS=/' /etc/sysconfig/qemu-ga # RHEL 9+ instances
