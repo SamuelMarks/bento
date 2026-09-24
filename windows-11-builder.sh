@@ -11,6 +11,7 @@
 #   register       Register built .box into local Vagrant inventory as bento/windows-11
 #   run            Run the built VM / box directly with KVM, serial & networking
 #   serial         Connect via serial to debug the running VM in real time
+#   snapshot       Manage VM snapshots (create, list, restore, delete)
 #   status         Show status of ISOs, build files, and running processes
 #   clean          Kill running VMs/Packer instances and clean temporary locks
 #
@@ -26,6 +27,10 @@
 #   --watch        Watch live serial log streaming (for serial command)
 #   --tail [N]     Display last N lines of serial log (default: 50)
 #   --send <CMD>   Send command string to serial console
+#   --create [N]   Create VM snapshot (default: snap_<timestamp>)
+#   --restore <N>  Restore VM snapshot
+#   --delete <N>   Delete VM snapshot
+#   --list         List VM snapshots
 #   --memory <MB>  Memory for runner in MB (default: 6144)
 #   --cpus <N>     CPUs for runner (default: 4)
 #   --vnc <PORT>   VNC display port for runner (default: none / headless)
@@ -143,8 +148,11 @@ CUSTOM_ISO="${CUSTOM_ISO:-}"
 TMP_DIR="${TMP_DIR:-${TMPDIR:-/tmp}}"
 SERIAL_SOCK="${SERIAL_SOCK:-/tmp/windows-11-serial.sock}"
 SERIAL_CLIENT_SOCK="${SERIAL_CLIENT_SOCK:-/tmp/windows-11-serial-client.sock}"
+MONITOR_SOCK="${MONITOR_SOCK:-/tmp/windows-11-monitor.sock}"
 SERIAL_LOG="${SERIAL_LOG:-${SCRIPT_DIR}/serial.log}"
 PROXY_SCRIPT="${PROXY_SCRIPT:-${SCRIPT_DIR}/serial_proxy.py}"
+SNAPSHOT_ACTION="list"
+SNAPSHOT_NAME=""
 
 # Parse CLI arguments
 while [ $# -gt 0 ]; do
@@ -152,6 +160,49 @@ while [ $# -gt 0 ]; do
     build|box|register|run|serial|status|clean)
       COMMAND="$1"
       shift
+      ;;
+    snapshot)
+      COMMAND="snapshot"
+      shift
+      if [ $# -gt 0 ]; then
+        case "$1" in
+          create|save|take)
+            SNAPSHOT_ACTION="create"
+            shift
+            if [ $# -gt 0 ] && case "$1" in -*) false ;; *) true ;; esac; then
+              SNAPSHOT_NAME="$1"
+              shift
+            fi
+            ;;
+          restore|load|apply|revert)
+            SNAPSHOT_ACTION="restore"
+            shift
+            if [ $# -gt 0 ] && case "$1" in -*) false ;; *) true ;; esac; then
+              SNAPSHOT_NAME="$1"
+              shift
+            fi
+            ;;
+          delete|del|rm|remove)
+            SNAPSHOT_ACTION="delete"
+            shift
+            if [ $# -gt 0 ] && case "$1" in -*) false ;; *) true ;; esac; then
+              SNAPSHOT_NAME="$1"
+              shift
+            fi
+            ;;
+          list|ls)
+            SNAPSHOT_ACTION="list"
+            shift
+            ;;
+          -*)
+            ;;
+          *)
+            SNAPSHOT_ACTION="create"
+            SNAPSHOT_NAME="$1"
+            shift
+            ;;
+        esac
+      fi
       ;;
     --provider)
       PROVIDER="$2"
@@ -208,6 +259,45 @@ while [ $# -gt 0 ]; do
       ;;
     --send)
       SERIAL_SEND_CMD="$2"
+      shift 2
+      ;;
+    --create|--save|--take)
+      COMMAND="snapshot"
+      SNAPSHOT_ACTION="create"
+      if [ $# -ge 2 ] && case "$2" in -*) false ;; *) true ;; esac; then
+        SNAPSHOT_NAME="$2"
+        shift 2
+      else
+        shift
+      fi
+      ;;
+    --restore|--load|--apply|--revert)
+      COMMAND="snapshot"
+      SNAPSHOT_ACTION="restore"
+      if [ $# -ge 2 ] && case "$2" in -*) false ;; *) true ;; esac; then
+        SNAPSHOT_NAME="$2"
+        shift 2
+      else
+        shift
+      fi
+      ;;
+    --delete|--del|--rm)
+      COMMAND="snapshot"
+      SNAPSHOT_ACTION="delete"
+      if [ $# -ge 2 ] && case "$2" in -*) false ;; *) true ;; esac; then
+        SNAPSHOT_NAME="$2"
+        shift 2
+      else
+        shift
+      fi
+      ;;
+    --list|--ls)
+      COMMAND="snapshot"
+      SNAPSHOT_ACTION="list"
+      shift
+      ;;
+    --name|--snapshot-name)
+      SNAPSHOT_NAME="$2"
       shift 2
       ;;
     --memory)
@@ -416,7 +506,7 @@ NSH_EOF
 cmd_clean() {
   log_info "Cleaning up stale locks, temporary build files, and processes..."
   rm -f "${SCRIPT_DIR}/builds/iso/"*.iso.lock 2>/dev/null || true
-  rm -f "${SERIAL_SOCK}" "${SERIAL_CLIENT_SOCK}" "/tmp/windows-11-serial.sock" "/tmp/windows-11-serial-client.sock" "/tmp/bento-qemu-serial.sock" 2>/dev/null || true
+  rm -f "${SERIAL_SOCK}" "${SERIAL_CLIENT_SOCK}" "${MONITOR_SOCK}" "/tmp/windows-11-serial.sock" "/tmp/windows-11-serial-client.sock" "/tmp/windows-11-monitor.sock" "/tmp/bento-qemu-serial.sock" 2>/dev/null || true
 
   # Kill background serial proxy
   pkill -f "serial_proxy.py" 2>/dev/null || true
@@ -621,6 +711,7 @@ cmd_status() {
   printf "  Complete Dir   : %s\n" "${BENTO_BUILD_COMPLETE_DIR}"
   printf "  Serial Socket  : %s (exists: %s)\n" "${SERIAL_SOCK}" "$([ -S "${SERIAL_SOCK}" ] && echo yes || echo no)"
   printf "  Client Socket  : %s (exists: %s)\n" "${SERIAL_CLIENT_SOCK}" "$([ -S "${SERIAL_CLIENT_SOCK}" ] && echo yes || echo no)"
+  printf "  Monitor Socket : %s (exists: %s)\n" "${MONITOR_SOCK}" "$([ -S "${MONITOR_SOCK}" ] && echo yes || echo no)"
 
   if [ -f "${SERIAL_LOG}" ]; then
     _log_lines=$(wc -l < "${SERIAL_LOG}")
@@ -681,6 +772,274 @@ Built Boxes (%s):
   if [ "${_found_boxes}" -eq 0 ]; then
     printf "  (No .box files built yet)\n"
   fi
+}
+
+# Snapshot management (live via QEMU monitor / VBoxManage, or offline via qemu-img)
+cmd_snapshot() {
+  _action="${SNAPSHOT_ACTION:-list}"
+  _snap_name="${SNAPSHOT_NAME:-}"
+  _provider="${PROVIDER}"
+
+  # Check if VirtualBox VM exists
+  _vbox_vm=""
+  if command -v VBoxManage >/dev/null 2>&1; then
+    _vbox_vm=$(VBoxManage list vms 2>/dev/null | grep -i "windows-11" | head -n 1 | cut -d'"' -f2 || true)
+  fi
+
+  if [ "${_provider}" = "virtualbox" ] || { [ -n "${_vbox_vm}" ] && [ "${_provider}" != "qemu" ]; }; then
+    if [ -z "${_vbox_vm}" ]; then
+      log_error "No VirtualBox Windows 11 VM found."
+      exit 1
+    fi
+    case "${_action}" in
+      create)
+        if [ -z "${_snap_name}" ]; then
+          _snap_name="snap_$(date +%Y%m%d_%H%M%S)"
+        fi
+        log_info "Taking VirtualBox snapshot '${_snap_name}' for VM '${_vbox_vm}'..."
+        VBoxManage snapshot "${_vbox_vm}" take "${_snap_name}"
+        log_success "Snapshot '${_snap_name}' created successfully."
+        ;;
+      list)
+        log_info "VirtualBox snapshots for VM '${_vbox_vm}':"
+        VBoxManage snapshot "${_vbox_vm}" list || true
+        ;;
+      restore)
+        if [ -z "${_snap_name}" ]; then
+          log_error "Snapshot name required for restore. Run './windows-11-builder.sh snapshot list' to view snapshots."
+          exit 1
+        fi
+        log_info "Restoring VirtualBox VM '${_vbox_vm}' to snapshot '${_snap_name}'..."
+        VBoxManage snapshot "${_vbox_vm}" restore "${_snap_name}"
+        log_success "Snapshot '${_snap_name}' restored successfully."
+        ;;
+      delete)
+        if [ -z "${_snap_name}" ]; then
+          log_error "Snapshot name required for delete."
+          exit 1
+        fi
+        log_info "Deleting VirtualBox snapshot '${_snap_name}' from VM '${_vbox_vm}'..."
+        VBoxManage snapshot "${_vbox_vm}" delete "${_snap_name}"
+        log_success "Snapshot '${_snap_name}' deleted successfully."
+        ;;
+      *)
+        log_error "Unknown snapshot action: ${_action}"
+        exit 1
+        ;;
+    esac
+    return 0
+  fi
+
+  # QEMU Provider
+  _disk_img=""
+  for _cand in \
+    "${BENTO_BUILD_FILES_DIR}/packer-windows-11-${ARCH}-qemu/windows-11-amd64" \
+    "${BENTO_BUILD_FILES_DIR}/packer-windows-11-${ARCH}-qemu/windows-11-${ARCH}" \
+    "${BENTO_BUILD_FILES_DIR}/packer-windows-11-${ARCH}-qemu/box.img" \
+    "${BENTO_BUILD_FILES_DIR}/packer-windows-11-${ARCH}-qemu/box_optimized.img" \
+    "${SCRIPT_DIR}/builds/build_files/packer-windows-11-${ARCH}-qemu/windows-11-amd64" \
+    "${SCRIPT_DIR}/builds/build_files/packer-windows-11-${ARCH}-qemu/windows-11-${ARCH}" \
+    "${SCRIPT_DIR}/builds/build_files/packer-windows-11-${ARCH}-qemu/box.img" \
+    "${SCRIPT_DIR}/builds/build_files/packer-windows-11-${ARCH}-qemu/box_optimized.img" \
+    "${SCRIPT_DIR}"/.vagrant/machines/*/qemu/*/linked-box.img \
+    ${EXTERNAL_VAGRANT_DIR:+"${EXTERNAL_VAGRANT_DIR}/.vagrant/machines/*/qemu/*/linked-box.img"} \
+    "${SCRIPT_DIR}/../libscript/vagrant/windows-11"/.vagrant/machines/*/qemu/*/linked-box.img; do
+    if [ -f "${_cand}" ]; then
+      _disk_img="${_cand}"
+      break
+    fi
+  done
+
+  if [ -z "${_disk_img}" ]; then
+    _box_file=$(find "${BENTO_BUILD_COMPLETE_DIR}" "${SCRIPT_DIR}/builds/build_complete" -name "*windows-11*.box" 2>/dev/null | head -n 1)
+    if [ -n "${_box_file}" ]; then
+      log_info "Extracting box.img from ${_box_file}..."
+      _extract_dir="${BENTO_BUILD_FILES_DIR}/packer-windows-11-${ARCH}-qemu"
+      mkdir -p "${_extract_dir}"
+      tar -xf "${_box_file}" -C "${_extract_dir}" box.img 2>/dev/null || true
+      if [ -f "${_extract_dir}/box.img" ]; then
+        _disk_img="${_extract_dir}/box.img"
+      fi
+    fi
+  fi
+
+  if [ -z "${_disk_img}" ]; then
+    log_error "No built Windows 11 disk image found. Run './windows-11-builder.sh build' first."
+    exit 1
+  fi
+
+  _disk_dir="$(dirname "${_disk_img}")"
+  _vars_img="${_disk_dir}/efivars_run.qcow2"
+
+  # Check if QEMU is running with monitor socket (check MONITOR_SOCK and vagrant-qemu sockets)
+  _qemu_live=false
+  _live_sock=""
+  for _sock in "${MONITOR_SOCK}" "${HOME}/.vagrant.d/tmp/vagrant-qemu"/*/qemu_socket; do
+    if [ -S "${_sock}" ]; then
+      if MONITOR_SOCK="${_sock}" python3 -c '
+import os, sys, socket
+sock = os.environ.get("MONITOR_SOCK", "")
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.settimeout(1.0)
+try:
+    s.connect(sock)
+    s.close()
+    sys.exit(0)
+except Exception:
+    sys.exit(1)
+' 2>/dev/null; then
+        _qemu_live=true
+        _live_sock="${_sock}"
+        break
+      fi
+    fi
+  done
+
+  # Check if QEMU process is running without a monitor socket
+  if [ "${_qemu_live}" = "false" ] && pgrep -fl "qemu-system-.*windows-11" >/dev/null 2>&1; then
+    log_warn "QEMU is currently running without an accessible monitor socket."
+    log_warn "For offline disk snapshot operations, stop the VM using './windows-11-builder.sh clean'."
+    log_warn "To enable live VM snapshots, start the VM using './windows-11-builder.sh run'."
+  fi
+
+  # Helper to execute command over QEMU monitor socket
+  exec_qemu_mon() {
+    _cmd="$1"
+    MONITOR_SOCK="${_live_sock}" MON_CMD="${_cmd}" python3 -c '
+import os, sys, socket, time, re
+
+sock_path = os.environ.get("MONITOR_SOCK", "")
+cmd = os.environ.get("MON_CMD", "")
+timeout = 30.0
+
+if not sock_path or not os.path.exists(sock_path):
+    sys.stderr.write("Monitor socket not found.\n")
+    sys.exit(2)
+
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.settimeout(timeout)
+try:
+    s.connect(sock_path)
+except Exception as e:
+    sys.stderr.write(f"Failed to connect to monitor socket: {e}\n")
+    sys.exit(1)
+
+buf = ""
+start = time.time()
+while "(qemu)" not in buf and (time.time() - start) < 3.0:
+    try:
+        chunk = s.recv(1024).decode("utf-8", errors="replace")
+        if not chunk: break
+        buf += chunk
+    except Exception:
+        break
+
+s.sendall((cmd.strip() + "\n").encode("utf-8"))
+
+out = ""
+start = time.time()
+while (time.time() - start) < timeout:
+    try:
+        chunk = s.recv(1024).decode("utf-8", errors="replace")
+        if not chunk: break
+        out += chunk
+        if "(qemu)" in out:
+            break
+    except Exception:
+        break
+s.close()
+
+clean = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", out)
+lines = [l.strip() for l in clean.splitlines() if l.strip() and not l.strip().startswith("(qemu)") and l.strip() != cmd.strip()]
+final_lines = [l for l in lines if not all(c in cmd for c in l)]
+result = "\n".join(final_lines).strip()
+if result:
+    print(result)
+if "Error" in result or "error" in result:
+    sys.exit(1)
+'
+  }
+
+  case "${_action}" in
+    create)
+      if [ -z "${_snap_name}" ]; then
+        _snap_name="snap_$(date +%Y%m%d_%H%M%S)"
+      fi
+      if [ "${_qemu_live}" = "true" ]; then
+        log_info "Creating live snapshot '${_snap_name}' via QEMU monitor (RAM + Disk)..."
+        if exec_qemu_mon "savevm ${_snap_name}"; then
+          log_success "Live snapshot '${_snap_name}' created successfully."
+        else
+          log_error "Failed to create live snapshot '${_snap_name}'."
+          exit 1
+        fi
+      else
+        log_info "Creating offline snapshot '${_snap_name}' on ${_disk_img}..."
+        qemu-img snapshot -c "${_snap_name}" "${_disk_img}"
+        if [ -f "${_vars_img}" ]; then
+          qemu-img snapshot -c "${_snap_name}" "${_vars_img}" 2>/dev/null || true
+        fi
+        log_success "Offline snapshot '${_snap_name}' created successfully."
+      fi
+      ;;
+    list)
+      if [ "${_qemu_live}" = "true" ]; then
+        log_info "Snapshots present in running VM (live via monitor):"
+        exec_qemu_mon "info snapshots" || true
+      else
+        log_info "Snapshots present on disk (${_disk_img}):"
+        qemu-img snapshot -l "${_disk_img}" || true
+      fi
+      ;;
+    restore)
+      if [ -z "${_snap_name}" ]; then
+        log_error "Snapshot name required for restore. Run './windows-11-builder.sh snapshot list' to view snapshots."
+        exit 1
+      fi
+      if [ "${_qemu_live}" = "true" ]; then
+        log_info "Restoring live VM to snapshot '${_snap_name}' via QEMU monitor..."
+        if exec_qemu_mon "loadvm ${_snap_name}"; then
+          log_success "Live VM restored to snapshot '${_snap_name}' successfully."
+        else
+          log_error "Failed to restore live VM to snapshot '${_snap_name}'."
+          exit 1
+        fi
+      else
+        log_info "Restoring offline disk image to snapshot '${_snap_name}'..."
+        qemu-img snapshot -a "${_snap_name}" "${_disk_img}"
+        if [ -f "${_vars_img}" ]; then
+          qemu-img snapshot -a "${_snap_name}" "${_vars_img}" 2>/dev/null || true
+        fi
+        log_success "Snapshot '${_snap_name}' restored successfully."
+      fi
+      ;;
+    delete)
+      if [ -z "${_snap_name}" ]; then
+        log_error "Snapshot name required for delete."
+        exit 1
+      fi
+      if [ "${_qemu_live}" = "true" ]; then
+        log_info "Deleting snapshot '${_snap_name}' via QEMU monitor..."
+        if exec_qemu_mon "delvm ${_snap_name}"; then
+          log_success "Snapshot '${_snap_name}' deleted successfully."
+        else
+          log_error "Failed to delete snapshot '${_snap_name}'."
+          exit 1
+        fi
+      else
+        log_info "Deleting snapshot '${_snap_name}' from ${_disk_img}..."
+        qemu-img snapshot -d "${_snap_name}" "${_disk_img}"
+        if [ -f "${_vars_img}" ]; then
+          qemu-img snapshot -d "${_snap_name}" "${_vars_img}" 2>/dev/null || true
+        fi
+        log_success "Snapshot '${_snap_name}' deleted successfully."
+      fi
+      ;;
+    *)
+      log_error "Unknown snapshot action: ${_action}"
+      exit 1
+      ;;
+  esac
 }
 
 # Run built box/disk directly with KVM, serial and port forwards
@@ -744,9 +1103,10 @@ cmd_run() {
   printf "  RDP Forward    : 127.0.0.1:3389\n"
   printf "  SSH Forward    : 127.0.0.1:2222\n"
   printf "  Serial Console : %s\n" "${SERIAL_SOCK}"
+  printf "  Monitor Socket : %s\n" "${MONITOR_SOCK}"
 
-  # Clean stale socket
-  rm -f "${SERIAL_SOCK}"
+  # Clean stale sockets
+  rm -f "${SERIAL_SOCK}" "${MONITOR_SOCK}"
 
   # Start serial multiplexer
   start_serial_proxy
@@ -783,15 +1143,20 @@ cmd_run() {
     set -- "$@" "-drive" "if=pflash,format=raw,readonly=on,file=${_efi_code}"
   fi
 
-  # Setup writable NVRAM efivars
+  # Setup writable NVRAM efivars (converted to qcow2 format for snapshot support)
   _disk_dir="$(dirname "${_disk_img}")"
-  _run_vars="${_disk_dir}/efivars_run.fd"
+  _run_vars="${_disk_dir}/efivars_run.qcow2"
+  _src_vars=""
   if [ -f "${_disk_dir}/efivars.fd" ]; then
-    cp -f "${_disk_dir}/efivars.fd" "${_run_vars}"
-    set -- "$@" "-drive" "if=pflash,format=raw,file=${_run_vars}"
+    _src_vars="${_disk_dir}/efivars.fd"
   elif [ -n "${_efi_vars}" ]; then
-    cp -f "${_efi_vars}" "${_run_vars}"
-    set -- "$@" "-drive" "if=pflash,format=raw,file=${_run_vars}"
+    _src_vars="${_efi_vars}"
+  fi
+  if [ -n "${_src_vars}" ]; then
+    if [ ! -f "${_run_vars}" ] || [ "${_src_vars}" -nt "${_run_vars}" ]; then
+      qemu-img convert -f raw -O qcow2 "${_src_vars}" "${_run_vars}"
+    fi
+    set -- "$@" "-drive" "if=pflash,format=qcow2,file=${_run_vars}"
   fi
 
   if [ "${ARCH}" = "aarch64" ]; then
@@ -826,7 +1191,8 @@ cmd_run() {
 
   set -- "$@" \
     "-chardev" "socket,id=ser0,path=${SERIAL_SOCK},server=on,wait=off" \
-    "-serial" "chardev:ser0"
+    "-serial" "chardev:ser0" \
+    "-monitor" "unix:${MONITOR_SOCK},server,nowait"
 
   exec "$@"
 }
@@ -930,6 +1296,7 @@ Vagrant.configure("2") do |config|
     lv.video_type = "virtio"
     lv.nic_model_type = "virtio"
     lv.driver = "kvm"
+    lv.channel :type => 'unix', :target_type => 'virtio', :target_name => 'org.qemu.guest_agent.0'
   end
 
   is_darwin = /darwin/ =~ RUBY_PLATFORM
@@ -1289,6 +1656,7 @@ case "${COMMAND}" in
   register) cmd_register "${PROVIDER}" ;;
   run)      cmd_run ;;
   serial)   cmd_serial ;;
+  snapshot) cmd_snapshot ;;
   status)   cmd_status ;;
   clean)    cmd_clean ;;
   *)

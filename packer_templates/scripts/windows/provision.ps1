@@ -254,35 +254,67 @@ switch -wildcard ($builderType) {
                     pnputil.exe /add-driver $_.FullName /install | Out-Null
                 }
                 $installed = $true
-                break
-            } elseif( Test-Path -LiteralPath $exe ) {
+            }
+            if (Test-Path -LiteralPath $exe) {
                 Write-SerialLog "VirtIO Guest Tools found at $exe"
                 try {
                     Write-Host 'Installing virtio guest tools...'
                     $p = Start-Process -FilePath $exe -ArgumentList '/qn', '/norestart' -PassThru
                     $p.WaitForExit(60000)
                     $installed = $true
-                    break
                 }
                 catch {
                     Write-Warning "Failed to install VirtIO guest tools: $_"
-                    $installed = $true
-                    break
                 }
-            } else {
-                Write-Host "Guest Tools NOT FOUND at $exe"
+            }
+            # Search for and install QEMU Guest Agent MSI if available (for quiesced snapshots via VSS)
+            $isArm64 = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64
+            $gaPattern = if ($isArm64) { "*qemu-ga*arm64*.msi" } else { "*qemu-ga*x86_64*.msi" }
+            $gaMsi = Get-ChildItem -Path "${letter}:\" -Filter $gaPattern -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $gaMsi) {
+                $gaMsi = Get-ChildItem -Path "${letter}:\" -Filter "*qemu-ga*.msi" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            }
+            if ($gaMsi) {
+                Write-SerialLog "Installing QEMU Guest Agent from $($gaMsi.FullName)..."
+                try {
+                    $p = Start-Process msiexec.exe -ArgumentList "/i `"$($gaMsi.FullName)`" /qn /norestart" -Wait -PassThru
+                    $p.WaitForExit(60000)
+                    $installed = $true
+                } catch {
+                    Write-Warning "Failed to install QEMU Guest Agent MSI: $_"
+                }
+            }
+            if ($installed) {
+                break
             }
         }
         if ( $installed ) {
-            Write-SerialLog "Done installing VirtIO guest tools."
+            Write-SerialLog "Done installing VirtIO guest tools and agent."
         } else {
             Write-Host "VirtIO drivers already present via unattend/cidata."
         }
+        # Configure and start QEMU Guest Agent and Volume Shadow Copy (VSS) service for snapshot support
+        try {
+            if (Get-Service -Name "QEMU-GA" -ErrorAction SilentlyContinue) {
+                Set-Service -Name "QEMU-GA" -StartupType Automatic
+                Start-Service -Name "QEMU-GA" -ErrorAction SilentlyContinue
+                Write-SerialLog "QEMU-GA service configured and running for live snapshots."
+            }
+        } catch {}
+        try {
+            Set-Service -Name "VSS" -StartupType Manual -ErrorAction SilentlyContinue
+        } catch {}
         break
     }
     "*hyperv*" {
         # Actions for Hyper-V ISO builder
         Write-SerialLog "Hyper-V enlightenments already bundled with Windows."
+        try {
+            # Enable Hyper-V Volume Shadow Copy Requestor for consistent live snapshots
+            Get-Service -Name "vmicvss" -ErrorAction SilentlyContinue | Set-Service -StartupType Automatic
+            Start-Service -Name "vmicvss" -ErrorAction SilentlyContinue
+            Write-SerialLog "Hyper-V Volume Shadow Copy Requestor configured for snapshots."
+        } catch {}
         break
     }
     default {
@@ -419,4 +451,3 @@ if (!(Get-Command rsync.exe -ErrorAction SilentlyContinue)) {
         Write-Host "Warning: Failed to install rsync: $_"
     }
 }
-

@@ -63,6 +63,16 @@ The generated Windows 11 box supports the complete Vagrant lifecycle:
 - Executes an orderly, graceful shutdown via WinRM.
 - Flushes NTFS filesystem buffers and transitions hypervisor domain to `shutoff`.
 
+### `vagrant snapshot`
+- Supports full hypervisor snapshot lifecycle:
+  - `vagrant snapshot save [vm-name] <snapshot-name>`: Saves the VM disk and state.
+  - `vagrant snapshot restore [vm-name] <snapshot-name>`: Restores to the named snapshot and reconnects communicator.
+  - `vagrant snapshot list [vm-name]`: Displays existing snapshots.
+  - `vagrant snapshot delete [vm-name] <snapshot-name>`: Removes snapshot checkpoints.
+  - `vagrant snapshot push` / `vagrant snapshot pop`: Stack-based rapid save and restore.
+- For crash-consistent and application-consistent live snapshots under libvirt and QEMU, VirtIO QEMU Guest Agent and VSS Provider are integrated.
+- Taking snapshots during `vagrant halt` (clean shutdown) is recommended for instant restoration without NTFS journal replaying.
+
 ---
 
 ## 3. Shared Folders
@@ -124,4 +134,10 @@ The all-in-one CLI script `windows-11-builder.sh` provides:
 
 # 6. Clean up temporary sockets, locks, and background processes
 ./windows-11-builder.sh clean
+
+# 7. Manage VM snapshots (live via QEMU monitor/VBoxManage, or offline)
+./windows-11-builder.sh snapshot --create <name>   # Take a snapshot (default: snap_<timestamp>)
+./windows-11-builder.sh snapshot --list            # List all available snapshots
+./windows-11-builder.sh snapshot --restore <name>  # Revert VM to a snapshot
+./windows-11-builder.sh snapshot --delete <name>   # Delete a snapshot
 ```
