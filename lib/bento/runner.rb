@@ -1,72 +1,16 @@
-# frozen_string_literal: true
-
-#
-# @file runner.rb
-# @brief Packer build runner and orchestration engine for Bento
-# @description
-#   Parses template lists, runs packer initialization and plugin upgrades,
-#   constructs parameterised packer build invocations, streams build output,
-#   enforces legal and architecture prerequisites for macOS targets,
-#   and writes build metadata records for completed boxes.
-#
-
-require 'English'
 require 'bento/common'
 require 'bento/buildmetadata'
 require 'bento/providermetadata'
 require 'bento/packerexec'
-require 'mixlib/shellout'
+require 'mixlib/shellout' unless defined?(Mixlib::ShellOut)
 
-#
-# @class BuildRunner
-# @description Manages Packer execution workflows across configured OS templates.
-#
 class BuildRunner
   include Common
   include PackerExec
 
-  # @return [Array<String>] Template files to build.
-  attr_reader :template_files
-  # @return [Boolean] Whether in dry-run mode.
-  attr_reader :dry_run
-  # @return [Boolean] Whether debug mode is enabled.
-  attr_reader :debug
-  # @return [String, NilClass] Only filter for builder sources.
-  attr_reader :only
-  # @return [String, NilClass] Except filter for builder sources.
-  attr_reader :except
-  # @return [String, NilClass] Mirror URL override.
-  attr_reader :mirror
-  # @return [Boolean] Whether GUI mode is active (non-headless).
-  attr_reader :headed
-  # @return [Boolean] Whether to run builds sequentially.
-  attr_reader :single
-  # @return [Array<String>] Accumulated build error template names.
-  attr_reader :errors
-  # @return [String, NilClass] On-error Packer strategy (e.g. 'cleanup', 'abort', 'ask').
-  attr_reader :on_error
-  # @return [String, NilClass] Version string override.
-  attr_reader :override_version
-  # @return [String] Timestamp string for the current build session.
-  attr_reader :build_timestamp
-  # @return [Integer, NilClass] CPU core override.
-  attr_reader :cpus
-  # @return [Integer, NilClass] RAM memory override in MB.
-  attr_reader :mem
-  # @return [Boolean] Whether to generate metadata without executing Packer.
-  attr_reader :metadata_only
-  # @return [Array<String>, NilClass] Additional Packer variable overrides.
-  attr_reader :vars
-  # @return [Array<String>, NilClass] Additional Packer variable file paths.
-  attr_reader :var_files
-  # @return [String, NilClass] Last executed Packer command.
-  attr_reader :pkr_cmd
+  attr_reader :template_files, :dry_run, :debug, :only, :except, :mirror, :headed, :single, :errors, :on_error,
+              :override_version, :build_timestamp, :cpus, :mem, :metadata_only, :vars, :var_files, :pkr_cmd
 
-  #
-  # Initializes a new BuildRunner instance.
-  #
-  # @param [OpenStruct, Hash] opts Command-line flags and runtime options.
-  #
   def initialize(opts)
     @template_files = opts.template_files
     @config = opts.config ||= false
@@ -89,13 +33,6 @@ class BuildRunner
     @pkr_cmd = nil
   end
 
-  #
-  # Executes the Packer build process across all specified templates.
-  # Enforces legal compliance for macOS guests prior to execution.
-  #
-  # @return [void]
-  # @raise [RuntimeError] If any template build fails.
-  #
   def start
     templates = template_files
     if templates.any? { |t| t.include?('macos') }
@@ -111,21 +48,12 @@ class BuildRunner
     end
     banner("Build finished in #{duration(time.real)}.")
     unless errors.empty?
-      raise("Failed Builds:
-#{errors.join("
-")}
-exited #{$CHILD_STATUS}")
+      raise("Failed Builds:\n#{errors.join("\n")}\nexited #{$CHILD_STATUS}")
     end
   end
 
   private
 
-  #
-  # Builds a single template target within its relative directory.
-  #
-  # @param [String] file Path to the template pkrvars file.
-  # @return [void]
-  #
   def build(file)
     bento_dir = Dir.pwd
     dir = File.dirname(file)
@@ -134,7 +62,7 @@ exited #{$CHILD_STATUS}")
     Dir.chdir dir
     for_packer_run_with(template) do |md_file, _var_file|
       cmd = Mixlib::ShellOut.new(packer_build_cmd(template, md_file.path).join(' '))
-      cmd.live_stream = $stdout
+      cmd.live_stream = STDOUT
       cmd.timeout = 28800
       @pkr_cmd = cmd.command
       banner("[#{template}] Building: '#{cmd.command}'")
@@ -155,26 +83,15 @@ exited #{$CHILD_STATUS}")
     end
   end
 
-  #
-  # Constructs the Packer build command array with all configured options and flags.
-  #
-  # @param [String] template Base name of the template.
-  # @param [String] _var_file Temporary variable file path.
-  # @return [Array<String>] Command line arguments for Packer.
-  #
   def packer_build_cmd(template, _var_file)
     pkrvars = "#{template}.pkrvars.hcl"
     cmd = %W(packer build -timestamp-ui -force -var-file=#{File.absolute_path(pkrvars)} #{File.absolute_path('../../packer_templates')})
-    if vars
-      vars.each do |var|
-        cmd.insert(4, "-var #{var}")
-      end
-    end
-    if var_files
-      var_files.each do |var_file|
-        cmd.insert(5, "-var-file=#{var_file}") if File.exist?(var_file)
-      end
-    end
+    vars.each do |var|
+      cmd.insert(4, "-var #{var}")
+    end if vars
+    var_files.each do |var_file|
+      cmd.insert(5, "-var-file=#{var_file}") if File.exist?(var_file)
+    end if var_files
     cmd.insert(4, "-only=#{only}") if only
     cmd.insert(4, "-except=#{except}") if except
     cmd.insert(4, "-var 'sources_enabled=#{only.split(',').inspect}'") if only
@@ -188,13 +105,6 @@ exited #{$CHILD_STATUS}")
     cmd
   end
 
-  #
-  # Writes the final build metadata JSON file upon successful box creation.
-  #
-  # @param [String] template Base name of the template.
-  # @param [Integer] buildtime Total elapsed build time in seconds.
-  # @return [void]
-  #
   def write_final_metadata(template, buildtime)
     md = BuildMetadata.new(template, build_timestamp, override_version, pkr_cmd).read
     path = File.join('../../builds/build_complete')

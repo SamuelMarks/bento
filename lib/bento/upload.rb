@@ -1,49 +1,18 @@
-# frozen_string_literal: true
-
-#
-# @file upload.rb
-# @brief Vagrant Cloud upload orchestrator for Bento boxes
-# @description
-#   Parses build metadata files for completed and tested boxes, validates authentication
-#   against Vagrant Cloud, enforces restrictions against uploading proprietary operating
-#   systems (including macOS and Windows), publishes release artifacts, and manages slug aliases.
-#
-
 require 'bento/common'
 
-#
-# @class UploadRunner
-# @description Coordinates publishing of tested Vagrant box images to Vagrant Cloud.
-#
 class UploadRunner
   include Common
 
-  # @return [String, NilClass] Specific metadata file path to upload, if specified.
   attr_reader :md_json
 
-  #
-  # Initializes a new UploadRunner instance.
-  #
-  # @param [OpenStruct, Hash] opts Command line and configuration options.
-  #
   def initialize(opts)
     @md_json = opts.md_json
   end
 
-  #
-  # Validates that the user is currently authenticated to Vagrant Cloud, issuing a warning if not.
-  #
-  # @return [void]
-  #
   def error_unless_logged_in
     warn("You cannot upload files to vagrant cloud unless the vagrant CLI is logged in. Run 'vagrant cloud auth login' first.") unless logged_in?
   end
 
-  #
-  # Initiates the upload process for all qualified box metadata files.
-  #
-  # @return [void]
-  #
   def start
     error_unless_logged_in
 
@@ -58,12 +27,10 @@ class UploadRunner
   end
 
   #
-  # Uploads all provider boxes defined in the given metadata file to Vagrant Cloud.
-  # Rejects proprietary operating systems (such as macOS) to comply with distribution licenses.
+  # Upload all the boxes defined in the passed metadata file
   #
-  # @param [String] md_file The path to the metadata file.
-  # @return [void]
-  # @raise [RuntimeError] If the architecture in the metadata is unrecognized.
+  # @param [String] md_file The path to the metadata file
+  #
   #
   def upload_box(md_file)
     md_data = box_metadata(md_file)
@@ -115,16 +82,14 @@ class UploadRunner
   end
 
   #
-  # Resolves a box name to its corresponding versioned or 'latest' slug alias.
+  # Given a box name return a slug name or nil
   #
-  # @param [String] name Box name identifier.
-  # @return [String, NilClass] Matching slug identifier, or nil if no slug configured.
+  # @return [String, NilClass] The slug name or nil
   #
   def lookup_slug(name)
     builds_yml['slugs'].each do |slug|
       return slug if name.start_with?(slug)
       next unless slug.end_with?('latest')
-
       box_name = slug.split('-').first
       box_version = Dir.glob("os_pkrvars/#{box_name}/**/*.pkrvars.hcl").map do |boxes|
         File.basename(boxes).split('-')[1].to_i
@@ -136,12 +101,6 @@ class UploadRunner
     nil
   end
 
-  #
-  # Determines the publication visibility flag based on builds.yml public list.
-  #
-  # @param [String] name Box identifier.
-  # @return [String] '--no-private' for public boxes, '--private' otherwise.
-  #
   def public_private_box(name)
     builds_yml['public'].each do |public|
       return '--no-private' if name.start_with?(public)
@@ -149,12 +108,6 @@ class UploadRunner
     '--private'
   end
 
-  #
-  # Determines whether the given architecture is marked as a default in builds.yml.
-  #
-  # @param [String] architecture Target CPU architecture (e.g. 'amd64', 'arm64').
-  # @return [String] '--default-architecture' or '--no-default-architecture'.
-  #
   def default_arch(architecture)
     builds_yml['default_architectures'].each do |arch|
       return '--default-architecture' if architecture.eql?(arch)
@@ -162,32 +115,14 @@ class UploadRunner
     '--no-default-architecture'
   end
 
-  #
-  # Generates standard box description text for Vagrant Cloud.
-  #
-  # @param [String] name Box name identifier.
-  # @return [String] Formatted description.
-  #
   def box_desc(name)
     "Vanilla #{name.tr('-', ' ').capitalize} Vagrant box created with Bento by Progress Chef"
   end
 
-  #
-  # Generates standard slug alias description text for Vagrant Cloud.
-  #
-  # @param [String] name Slug name identifier.
-  # @return [String] Formatted slug description.
-  #
   def slug_desc(name)
     "Vanilla #{name.tr('-', ' ').capitalize} Vagrant box created with Bento by Progress Chef. This box will be updated with the latest releases of #{name.tr('-', ' ').capitalize} as they become available"
   end
 
-  #
-  # Generates version release description text capturing provider versions and tooling metadata.
-  #
-  # @param [Hash] md_data Box metadata hash.
-  # @return [String] Release note description.
-  #
   def ver_desc(md_data)
     tool_versions = md_data['providers'].map do |provider|
       if provider['name'] == 'vmware_desktop'

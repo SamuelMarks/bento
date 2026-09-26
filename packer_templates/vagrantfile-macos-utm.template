@@ -1,18 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-#
-# @file vagrantfile-macos-utm.template
-# @brief Vagrant UTM configuration template for macOS guests on Apple Silicon
-# @description
-#   Configures the Vagrant environment for running macOS virtual machines on Apple Silicon
-#   using UTM and the Apple Virtualization Framework backend.
-#   Enables native vagrant snapshot CLI commands (save, restore, list, delete) via APFS cloning,
-#   and configures VirtioFS bidirectional shared directory optimization.
-#   Notice: In accordance with Apple SLA Section 2.B(iii), virtual macOS instances may only
-#   be run on genuine Apple-branded hardware for software development or personal use.
-#
-
 # Hook into vagrant_utm for native snapshot support on Apple Virtualization backend
 begin
   require 'bento/vagrant_utm_macos_snapshot'
@@ -36,16 +24,14 @@ Vagrant.configure(2) do |config|
   # Initial rsync synchronization ensures files are present immediately upon boot
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
 
-  # VirtioFS Bidirectional Synced Folder Optimization:
+  # VirtioFS Bidirectional Synced Folder:
   # Apple Virtualization Framework automounts host directories shared via VirtioFS (virtFS)
-  # under '/Volumes/My Shared Files' or '/Volumes/vagrant'. When available, link /vagrant directly
-  # to the VirtioFS volume for real-time, memory-mapped bidirectional file synchronization.
+  # under '/Volumes/My Shared Files' or '/Volumes/vagrant'. Link /vagrant directly
+  # to the VirtioFS volume when available for bidirectional synchronization.
   config.vm.provision "shell", run: "always", inline: <<-SHELL
     if [ -d "/Volumes/My Shared Files" ]; then
-      echo "==> [VirtioFS] Linking /vagrant to bidirectional VirtioFS share '/Volumes/My Shared Files'"
       ln -sfn "/Volumes/My Shared Files" /vagrant
     elif [ -d "/Volumes/vagrant" ]; then
-      echo "==> [VirtioFS] Linking /vagrant to bidirectional VirtioFS share '/Volumes/vagrant'"
       ln -sfn "/Volumes/vagrant" /vagrant
     fi
   SHELL

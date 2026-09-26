@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require 'coverage'
-Coverage.start(lines: true, branches: true, methods: true)
-
 require 'json'
 require 'fileutils'
 require 'tmpdir'
@@ -26,38 +23,6 @@ RSpec.configure do |config|
   config.warnings = true
   config.order = :random
   Kernel.srand config.seed
-
-  config.after(:suite) do
-    results = Coverage.result
-    lib_results = results.select { |k, _| k.include?('/lib/bento') }
-    lib_results.each do |file, cov|
-      lines = cov[:lines]
-      branches = cov[:branches]
-      total_lines = lines.compact.size
-      covered_lines = lines.compact.count { |c| c > 0 }
-      line_pct = total_lines > 0 ? (covered_lines.to_f / total_lines * 100).round(2) : 100.0
-
-      total_branches = 0
-      covered_branches = 0
-      branches&.each_value do |targets|
-        targets.each_value do |count|
-          total_branches += 1
-          covered_branches += 1 if count > 0
-        end
-      end
-      branch_pct = total_branches > 0 ? (covered_branches.to_f / total_branches * 100).round(2) : 100.0
-
-      puts sprintf("Coverage for %-35s Line: %6.2f%% (%d/%d) | Branch: %6.2f%% (%d/%d)",
-                   File.basename(file), line_pct, covered_lines, total_lines, branch_pct, covered_branches, total_branches)
-      if branch_pct < 100.0 && (file.include?('providermetadata.rb') || file.include?('common.rb') || file.include?('upload.rb') || file.include?('vagrant_utm_macos_snapshot.rb'))
-        branches&.each do |(type, id, line, col), targets|
-          targets.each do |target, count|
-            puts "  [Branch Miss] #{File.basename(file)}:#{line} target #{target}" if count == 0
-          end
-        end
-      end
-    end
-  end
 end
 
 # Helper: build a minimal OpenStruct opts suitable for most runners

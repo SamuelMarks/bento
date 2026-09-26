@@ -1,14 +1,5 @@
 # frozen_string_literal: true
 
-#
-# @file vagrant_utm_macos_snapshot_spec.rb
-# @brief Specification tests for Bento::VagrantUtmMacosSnapshot
-# @description
-#   Exhaustively tests the macOS UTM snapshot extension including Apple backend detection,
-#   clone creation, deletion, listing, restoration, error handling, and driver patching
-#   with 100% line and branch coverage.
-#
-
 require 'bento/vagrant_utm_macos_snapshot'
 
 RSpec.describe Bento::VagrantUtmMacosSnapshot do

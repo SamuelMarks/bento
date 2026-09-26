@@ -1,15 +1,8 @@
 #!/bin/sh
-#
-# @file disable_auto_update.sh
-# @brief Disables macOS automated software updates and background downloads
-# @description
-#   Suppresses background software update checks, critical config downloads,
-#   automatic app store updates, and automated restarts on macOS guests.
-#
 
 set -eu
 
-echo "==> Disabling automatic software updates"
+echo 'Disable automatic updates'
 osascript -e 'tell application "System Settings" to quit' 2>/dev/null || true
 osascript -e 'tell application "System Preferences" to quit' 2>/dev/null || true
 

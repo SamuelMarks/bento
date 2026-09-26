@@ -1,23 +1,28 @@
 #!/bin/sh
+# The MIT License (MIT)
+# Copyright (c) 2013-2017 Timothy Sutton
 #
-# @file system-default.sh
-# @brief Configures macOS guest system defaults for Bento Vagrant boxes
-# @description
-#   Disables screensavers, prevents system and display sleep, configures passwordless
-#   sudo for the vagrant user, enables automatic GUI login, disables screen lock,
-#   and suppresses crash reporter dialogs.
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+# documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+# persons to whom the Software is furnished to do so, subject to the following conditions:
 #
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 set -eu
 
 PlistBuddy="/usr/libexec/PlistBuddy"
 
-echo "==> Configuring screensaver and power management settings"
-# Disable loginwindow screensaver to save CPU cycles
+echo 'Disable loginwindow screensaver to save CPU cycles'
 $PlistBuddy -c 'Add :loginWindowIdleTime integer 0' "/Library/Preferences/com.apple.screensaver.plist" 2>/dev/null || true
 defaults -currentHost write com.apple.screensaver idleTime 0
 
-# Prevent the VM from sleeping
+echo 'Prevent the VM from sleeping'
 systemsetup -setdisplaysleep Off 2>/dev/null || true
 systemsetup -setsleep Off 2>/dev/null || true
 systemsetup -setcomputersleep Off 2>/dev/null || true
@@ -33,10 +38,10 @@ chmod 0440 /etc/sudoers.d/vagrant
 echo "==> Enabling Remote Login (SSH)"
 systemsetup -setremotelogin on 2>/dev/null || true
 
-echo "==> Enabling automatic GUI login for the vagrant user"
+echo "Enabling automatic GUI login for the 'Vagrant' user."
 sysadminctl -autologin set -userName vagrant -password vagrant 2>/dev/null || true
 
-echo "==> Disabling screen lock"
+echo 'Disable screen lock'
 sysadminctl -screenLock off -password vagrant 2>/dev/null || true
 
 echo "==> Suppressing crash reporter dialogs"

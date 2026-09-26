@@ -1,44 +1,12 @@
-# frozen_string_literal: true
-
-#
-# @file vagrant_utm_macos_snapshot.rb
-# @brief Native Vagrant snapshot support extension for macOS UTM guests
-# @description
-#   Extends vagrant_utm driver functionality to support Apple Virtualization Framework
-#   (Backend = Apple) virtual machines. Bypasses QEMU-specific qemu-img snapshot calls
-#   by utilizing APFS copy-on-write virtual machine cloning via utmctl.
-#
 
 require 'mixlib/shellout'
 require 'etc'
-
-#
-# @module Bento
-# @description Root namespace for Bento extensions and tooling.
-#
 module Bento
-  #
-  # @class VagrantUtmMacosSnapshot
-  # @description Implements APFS clone-based snapshot management for macOS guests in UTM.
-  #
   class VagrantUtmMacosSnapshot
-    #
-    # Returns the absolute path to the UTM Documents container directory on the host.
-    #
-    # @return [String] Path to UTM virtual machines directory.
-    #
     def self.utm_documents_dir
       username = ENV['USER'] || Etc.getlogin
       "/Users/#{username}/Library/Containers/com.utmapp.UTM/Data/Documents"
     end
-
-    #
-    # Determines whether a given UTM virtual machine uses the Apple Virtualization backend.
-    #
-    # @param [String] vm_name Target virtual machine name.
-    # @param [String] docs_dir Base UTM documents directory.
-    # @return [Boolean] True if the VM uses Apple backend, false otherwise.
-    #
     def self.apple_backend?(vm_name, docs_dir = utm_documents_dir)
       bundle_path = File.join(docs_dir, "#{vm_name}.utm")
       return false unless Dir.exist?(bundle_path)
@@ -55,25 +23,9 @@ module Bento
 
       false
     end
-
-    #
-    # Generates standard clone name for a given virtual machine snapshot.
-    #
-    # @param [String] vm_name Base virtual machine name.
-    # @param [String] snapshot_name Desired snapshot identifier.
-    # @return [String] Formatted snapshot clone name.
-    #
     def self.snapshot_clone_name(vm_name, snapshot_name)
       "#{vm_name}-snapshot-#{snapshot_name}"
     end
-
-    #
-    # Executes an external command string and returns trimmed stdout.
-    #
-    # @param [String] cmd Shell command to execute.
-    # @return [String] Command standard output.
-    # @raise [RuntimeError] If command exits with non-zero status.
-    #
     def self.execute_command(cmd)
       sout = Mixlib::ShellOut.new(cmd)
       sout.run_command
@@ -83,15 +35,6 @@ module Bento
 
       sout.stdout.strip
     end
-
-    #
-    # Resolves the human-readable machine name from a machine identifier.
-    #
-    # @param [Object] driver The vagrant_utm driver instance.
-    # @param [String] machine_id The UUID or identifier of the machine.
-    # @return [String] Machine name.
-    # @raise [RuntimeError] If machine cannot be resolved.
-    #
     def self.resolve_machine_name(driver, machine_id)
       list = driver.list
       item = list.find(uuid: machine_id)
@@ -99,16 +42,6 @@ module Bento
 
       item.name
     end
-
-    #
-    # Creates a snapshot of a virtual machine.
-    # For Apple backend VMs, creates an APFS clone via utmctl.
-    #
-    # @param [Object] driver Driver instance.
-    # @param [String] machine_id Machine UUID.
-    # @param [String] snapshot_name Snapshot name.
-    # @return [void]
-    #
     def self.create_snapshot(driver, machine_id, snapshot_name)
       vm_name = resolve_machine_name(driver, machine_id)
       if apple_backend?(vm_name)
@@ -118,16 +51,6 @@ module Bento
         driver.orig_create_snapshot(machine_id, snapshot_name)
       end
     end
-
-    #
-    # Deletes a snapshot of a virtual machine.
-    # For Apple backend VMs, deletes the clone via utmctl.
-    #
-    # @param [Object] driver Driver instance.
-    # @param [String] machine_id Machine UUID.
-    # @param [String] snapshot_name Snapshot name.
-    # @return [void]
-    #
     def self.delete_snapshot(driver, machine_id, snapshot_name)
       vm_name = resolve_machine_name(driver, machine_id)
       if apple_backend?(vm_name)
@@ -137,15 +60,6 @@ module Bento
         driver.orig_delete_snapshot(machine_id, snapshot_name)
       end
     end
-
-    #
-    # Lists all available snapshots for a virtual machine.
-    # For Apple backend VMs, enumerates snapshot clones via utmctl list.
-    #
-    # @param [Object] driver Driver instance.
-    # @param [String] machine_id Machine UUID.
-    # @return [Array<String>] List of snapshot names.
-    #
     def self.list_snapshots(driver, machine_id)
       vm_name = resolve_machine_name(driver, machine_id)
       if apple_backend?(vm_name)
@@ -170,17 +84,6 @@ module Bento
         driver.orig_list_snapshots(machine_id)
       end
     end
-
-    #
-    # Restores a virtual machine to a specified snapshot.
-    # For Apple backend VMs, stops and removes current VM, then clones snapshot back.
-    #
-    # @param [Object] driver Driver instance.
-    # @param [String] machine_id Machine UUID.
-    # @param [String] snapshot_name Snapshot name to restore.
-    # @return [void]
-    # @raise [RuntimeError] If target snapshot does not exist.
-    #
     def self.restore_snapshot(driver, machine_id, snapshot_name)
       vm_name = resolve_machine_name(driver, machine_id)
       if apple_backend?(vm_name)
@@ -205,13 +108,6 @@ module Bento
         driver.orig_restore_snapshot(machine_id, snapshot_name)
       end
     end
-
-    #
-    # Dynamically patches a driver class to intercept snapshot operations for macOS guests.
-    #
-    # @param [Class] driver_class The class to patch (e.g. Driver::Version_4_5).
-    # @return [void]
-    #
     def self.patch_driver!(driver_class)
       return if driver_class.instance_variable_get(:@macos_snapshot_patched)
 
@@ -240,12 +136,6 @@ module Bento
 
       driver_class.instance_variable_set(:@macos_snapshot_patched, true)
     end
-
-    #
-    # Automatically hooks into VagrantPlugins::Utm driver classes if present in runtime.
-    #
-    # @return [Boolean] True if successfully installed, false if vagrant_utm not present.
-    #
     def self.install!
       if defined?(VagrantPlugins::Utm::Driver::Version_4_5)
         patch_driver!(VagrantPlugins::Utm::Driver::Version_4_5)

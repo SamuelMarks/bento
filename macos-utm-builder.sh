@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 #
-# @file macos-utm-builder.sh
-# @brief Automated macOS Vagrant Box builder for Apple Silicon using UTM
-# @description
-#   Orchestrates the acquisition of official Apple macOS restore bundles (.ipsw),
-#   verifies SHA-256 integrity, creates an Apple Virtualization framework-compliant
-#   UTM virtual machine (.utm bundle), provisions system defaults and SSH keys,
-#   and packages the resulting box artifact for Vagrant.
+# Automated macOS Vagrant Box builder for Apple Silicon using UTM.
+# Orchestrates download of Apple macOS restore bundles (.ipsw), integrity
+# verification, UTM VM creation, guest provisioning, and box packaging.
 #
 # Usage:
 #   ./macos-utm-builder.sh [OPTIONS]
@@ -40,42 +36,19 @@ VM_DISK_GB="64"
 DRY_RUN=false
 PACKAGE_BOX=false
 
-#
-# Prints an informational banner message.
-#
-# @param $1 Message string to print.
-# @return 0
-#
 log_info() {
   echo "==> [macos-utm-builder] $1"
 }
 
-#
-# Prints a warning message prefixed with '>>>'.
-#
-# @param $1 Warning message string.
-# @return 0
-#
 log_warn() {
   echo ">>> [macos-utm-builder] WARNING: $1"
 }
 
-#
-# Prints an error message and terminates execution.
-#
-# @param $1 Error message string.
-# @return 1
-#
 log_error() {
   echo "!!! [macos-utm-builder] ERROR: $1" >&2
   exit 1
 }
 
-#
-# Displays CLI usage and available options.
-#
-# @return 0
-#
 usage() {
   cat <<EOF
 Usage: ./macos-utm-builder.sh [OPTIONS]
@@ -91,11 +64,6 @@ Options:
 EOF
 }
 
-#
-# Validates that host platform and hardware satisfy legal and architecture requirements.
-#
-# @return 0 on success, terminates on failure.
-#
 check_prerequisites() {
   log_info "Verifying host platform and hardware prerequisites..."
 
@@ -122,12 +90,6 @@ check_prerequisites() {
   log_info "Host prerequisites verified: Darwin ${os_arch} on Apple Silicon."
 }
 
-#
-# Parses command-line arguments.
-#
-# @param $@ Array of command line arguments.
-# @return 0
-#
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -166,12 +128,6 @@ parse_args() {
   done
 }
 
-#
-# Resolves IPSW URL and SHA256 checksum from the corresponding os_pkrvars file.
-#
-# @param $1 Target macOS major version (e.g. 14, 15).
-# @return Sets global IPSW_URL and IPSW_CHECKSUM.
-#
 resolve_ipsw_metadata() {
   local pkrvars_file="os_pkrvars/macos/macos-${1}-aarch64.pkrvars.hcl"
   if [ ! -f "${pkrvars_file}" ]; then
@@ -190,13 +146,6 @@ resolve_ipsw_metadata() {
   log_info "  SHA256: ${IPSW_CHECKSUM}"
 }
 
-#
-# Downloads and caches the Apple IPSW restore bundle into builds/iso/.
-#
-# @param $1 IPSW download URL.
-# @param $2 Expected SHA256 checksum.
-# @return Sets global IPSW_FILE path.
-#
 acquire_ipsw() {
   local url="$1"
   local expected_hash="$2"
@@ -237,13 +186,6 @@ acquire_ipsw() {
   log_info "IPSW checksum verified successfully."
 }
 
-#
-# Generates a compliant Apple Virtualization framework UTM bundle directory.
-#
-# @param $1 Destination directory for the .utm bundle.
-# @param $2 Virtual machine name.
-# @return 0 on success.
-#
 generate_utm_bundle() {
   local bundle_path="$1"
   local vm_name="$2"
@@ -327,15 +269,6 @@ EOF
   touch "${bundle_path}/MachineIdentifier.bin"
 }
 
-#
-# Generates a Vagrant box package (.utm.box) from a completed UTM VM bundle
-# and automatically registers the box in the local Vagrant inventory.
-#
-# @param $1 Path to the completed .utm bundle directory.
-# @param $2 Output directory for the packaged .box file.
-# @param $3 Target box basename.
-# @return 0 on success.
-#
 package_box() {
   local utm_bundle="$1"
   local output_dir="$2"
@@ -385,12 +318,6 @@ EOF
   fi
 }
 
-#
-# Main orchestrator entry point.
-#
-# @param $@ Script invocation arguments.
-# @return 0
-#
 main() {
   parse_args "$@"
   log_info "Starting Bento macOS UTM Box Builder for macOS ${MACOS_VERSION}"

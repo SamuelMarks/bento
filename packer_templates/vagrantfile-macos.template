@@ -1,15 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-#
-# @file vagrantfile-macos.template
-# @brief Vagrant configuration template for macOS guests on Apple Silicon
-# @description
-#   Configures the Vagrant environment for running macOS virtual machines on Apple Silicon.
-#   Notice: In accordance with Apple SLA Section 2.B(iii), virtual macOS instances may only
-#   be run on genuine Apple-branded hardware for software development or personal use.
-#
-
 Vagrant.configure(2) do |config|
   # Guest OS identification
   config.vm.guest = :darwin
