@@ -60,8 +60,7 @@ ensure_storage_dir() {
         for _bundle in \
           "${EXTERNAL_STATE_SPARSEBUNDLE:-}" \
           ${EXTERNAL_STORAGE_DIR:+"${EXTERNAL_STORAGE_DIR}/${_vol_name}.sparsebundle"} \
-          "/Volumes/"*"/${_vol_name}.sparsebundle" \
-          "${HOME}/${_vol_name}.sparsebundle"
+          ${EXTERNAL_SPARSEBUNDLE_PATH:-}
         do
           if [ -n "${_bundle}" ] && [ -e "${_bundle}" ]; then
             hdiutil attach -nobrowse "${_bundle}" >/dev/null 2>&1 || true
@@ -391,7 +390,7 @@ ensure_cidata() {
     return 0
   fi
   log_info "VirtIO drivers not found in packer_templates/cidata. Searching..."
-  for _cand in "${SCRIPT_DIR}/../windows-11-arm64-packer/packer_templates/cidata" "${SCRIPT_DIR}/windows-11-arm64-packer/packer_templates/cidata" "${HOME}/repos/bento/windows-11-arm64-packer/packer_templates/cidata"; do
+  for _cand in "${SCRIPT_DIR}/../windows-11-arm64-packer/packer_templates/cidata" "${SCRIPT_DIR}/windows-11-arm64-packer/packer_templates/cidata" ${EXTRA_CIDATA_DIR:-}; do
     if [ -d "${_cand}/viostor" ]; then
       log_info "Copying pre-extracted VirtIO drivers from ${_cand}..."
       mkdir -p "${_cidata_target}"
@@ -843,7 +842,8 @@ cmd_snapshot() {
     "${SCRIPT_DIR}/builds/build_files/packer-windows-11-${ARCH}-qemu/box_optimized.img" \
     "${SCRIPT_DIR}"/.vagrant/machines/*/qemu/*/linked-box.img \
     ${EXTERNAL_VAGRANT_DIR:+"${EXTERNAL_VAGRANT_DIR}/.vagrant/machines/*/qemu/*/linked-box.img"} \
-    "${SCRIPT_DIR}/../libscript/vagrant/windows-11"/.vagrant/machines/*/qemu/*/linked-box.img; do
+    ${EXTERNAL_VAGRANT_MACHINES_DIR:+"${EXTERNAL_VAGRANT_MACHINES_DIR}/.vagrant/machines/*/qemu/*/linked-box.img"} \
+    ${EXTRA_VAGRANT_SEARCH_DIRS:-}; do
     if [ -f "${_cand}" ]; then
       _disk_img="${_cand}"
       break
