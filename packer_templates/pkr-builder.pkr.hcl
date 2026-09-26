@@ -37,51 +37,51 @@ locals {
             "${path.root}/scripts/omnios/vmtools_omnios.sh",
             "${path.root}/scripts/omnios/minimize_omnios.sh"
             ] : (
-          var.os_name == "freebsd" ? [
-            "${path.root}/scripts/freebsd/postinstall_freebsd.sh",
-            "${path.root}/scripts/freebsd/sudoers_freebsd.sh",
-            "${path.root}/scripts/freebsd/cleanup_freebsd.sh"
-            ] : (
-            var.os_name == "opensuse-leap" ||
-            var.os_name == "sles" ? [
-              "${path.root}/scripts/suse/unsupported-modules_suse.sh",
-              "${path.root}/scripts/suse/vagrant_group_suse.sh",
-              "${path.root}/scripts/suse/sudoers_suse.sh",
-              "${path.root}/scripts/suse/zypper-locks_suse.sh",
-              "${path.root}/scripts/suse/remove-dvd-source_suse.sh",
-              "${path.root}/scripts/suse/cleanup_suse.sh"
+            var.os_name == "freebsd" ? [
+              "${path.root}/scripts/freebsd/postinstall_freebsd.sh",
+              "${path.root}/scripts/freebsd/sudoers_freebsd.sh",
+              "${path.root}/scripts/freebsd/cleanup_freebsd.sh"
               ] : (
-              var.os_name == "ubuntu" ||
-              var.os_name == "debian" ? [
-                "${path.root}/scripts/${var.os_name}/networking_${var.os_name}.sh",
-                "${path.root}/scripts/${var.os_name}/sudoers_${var.os_name}.sh",
-                "${path.root}/scripts/${var.os_name}/systemd_${var.os_name}.sh",
-                "${path.root}/scripts/${var.os_name}/hyperv_${var.os_name}.sh",
-                "${path.root}/scripts/${var.os_name}/cleanup_${var.os_name}.sh",
-                "${path.root}/scripts/_common/parallels_post_cleanup_debian_ubuntu.sh"
+              var.os_name == "opensuse-leap" ||
+              var.os_name == "sles" ? [
+                "${path.root}/scripts/suse/unsupported-modules_suse.sh",
+                "${path.root}/scripts/suse/vagrant_group_suse.sh",
+                "${path.root}/scripts/suse/sudoers_suse.sh",
+                "${path.root}/scripts/suse/zypper-locks_suse.sh",
+                "${path.root}/scripts/suse/remove-dvd-source_suse.sh",
+                "${path.root}/scripts/suse/cleanup_suse.sh"
                 ] : (
-                var.os_name == "fedora" ? [
-                  "${path.root}/scripts/fedora/networking_fedora.sh",
-                  "${path.root}/scripts/fedora/install-supporting-packages_fedora.sh",
-                  "${path.root}/scripts/fedora/real-tmp_fedora.sh",
-                  "${path.root}/scripts/fedora/cleanup_dnf.sh",
-] : var.os_name == "alpine" ? [
-  "${path.root}/scripts/alpine/networking_alpine.sh",
-  "${path.root}/scripts/alpine/update_apk.sh",
-  "${path.root}/scripts/alpine/install-supporting-packages_alpine.sh",
-  "${path.root}/scripts/alpine/build-tools_alpine.sh",
-  "${path.root}/scripts/alpine/real-tmp_alpine.sh",
-  "${path.root}/scripts/alpine/cleanup_apk.sh"
-  ] : [
-    "${path.root}/scripts/rhel/cleanup_dnf.sh"
-  ]
+                var.os_name == "ubuntu" ||
+                var.os_name == "debian" ? [
+                  "${path.root}/scripts/${var.os_name}/networking_${var.os_name}.sh",
+                  "${path.root}/scripts/${var.os_name}/sudoers_${var.os_name}.sh",
+                  "${path.root}/scripts/${var.os_name}/systemd_${var.os_name}.sh",
+                  "${path.root}/scripts/${var.os_name}/hyperv_${var.os_name}.sh",
+                  "${path.root}/scripts/${var.os_name}/cleanup_${var.os_name}.sh",
+                  "${path.root}/scripts/_common/parallels_post_cleanup_debian_ubuntu.sh"
+                  ] : (
+                  var.os_name == "fedora" ? [
+                    "${path.root}/scripts/fedora/networking_fedora.sh",
+                    "${path.root}/scripts/fedora/install-supporting-packages_fedora.sh",
+                    "${path.root}/scripts/fedora/real-tmp_fedora.sh",
+                    "${path.root}/scripts/fedora/cleanup_dnf.sh",
+                    ] : var.os_name == "alpine" ? [
+                    "${path.root}/scripts/alpine/networking_alpine.sh",
+                    "${path.root}/scripts/alpine/update_apk.sh",
+                    "${path.root}/scripts/alpine/install-supporting-packages_alpine.sh",
+                    "${path.root}/scripts/alpine/build-tools_alpine.sh",
+                    "${path.root}/scripts/alpine/real-tmp_alpine.sh",
+                    "${path.root}/scripts/alpine/cleanup_apk.sh"
+                    ] : [
+                    "${path.root}/scripts/rhel/cleanup_dnf.sh"
+                  ]
+                )
               )
             )
           )
         )
       )
     )
-  )
   ) : var.scripts
   nix_environment_vars = var.os_name == "freebsd" ? [
     "HOME_DIR=/home/vagrant",
@@ -90,17 +90,24 @@ locals {
     "no_proxy=${var.no_proxy}",
     "pkg_branch=quarterly"
     ] : (
-    var.os_name == "solaris" || var.os_name == "omnios" ? [
-      "HOME_DIR=/export/home/vagrant",
+    var.os_name == "macos" ? [
+      "HOME_DIR=/Users/vagrant",
       "http_proxy=${var.http_proxy}",
       "https_proxy=${var.https_proxy}",
       "no_proxy=${var.no_proxy}"
-    ] : [
-      "HOME_DIR=/home/vagrant",
-      "http_proxy=${var.http_proxy}",
-      "https_proxy=${var.https_proxy}",
-      "no_proxy=${var.no_proxy}"
-    ]
+      ] : (
+      var.os_name == "solaris" || var.os_name == "omnios" ? [
+        "HOME_DIR=/export/home/vagrant",
+        "http_proxy=${var.http_proxy}",
+        "https_proxy=${var.https_proxy}",
+        "no_proxy=${var.no_proxy}"
+        ] : [
+        "HOME_DIR=/home/vagrant",
+        "http_proxy=${var.http_proxy}",
+        "https_proxy=${var.https_proxy}",
+        "no_proxy=${var.no_proxy}"
+      ]
+    )
   )
   nix_execute_command = var.os_name == "freebsd" ? "echo 'vagrant' | {{.Vars}} su -m root -c 'sh -eux {{.Path}}'" : (
     var.os_name == "omnios" ? "echo 'vagrant' | sudo -S {{ .Vars }} sh -eux '{{ .Path }}'" : (
@@ -159,7 +166,7 @@ build {
     expect_disconnect = true
     pause_before      = "10s"
     scripts           = local.scripts
-    valid_exit_codes = [0, 143]
+    valid_exit_codes  = [0, 143]
     except            = var.is_windows ? local.source_names : null
   }
   # Run minimize script
@@ -246,7 +253,9 @@ build {
     output            = "${local.build_complete_dir}/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd.template" : (
-        var.os_name == "omnios" || var.os_name == "solaris" ? "${path.root}/vagrantfile-omnios.template" : null
+        var.os_name == "omnios" || var.os_name == "solaris" ? "${path.root}/vagrantfile-omnios.template" : (
+          var.os_name == "macos" ? "${path.root}/vagrantfile-macos.template" : null
+        )
       )
     )
     except = ["utm-iso.vm", "qemu.vm"]
@@ -256,18 +265,22 @@ build {
     output            = "${local.build_complete_dir}/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd.template" : (
-        var.os_name == "omnios" || var.os_name == "solaris" ? "${path.root}/vagrantfile-omnios.template" : null
+        var.os_name == "omnios" || var.os_name == "solaris" ? "${path.root}/vagrantfile-omnios.template" : (
+          var.os_name == "macos" ? "${path.root}/vagrantfile-macos.template" : null
+        )
       )
     )
     provider_override = "libvirt"
-    only = ["qemu.vm"]
+    only              = ["qemu.vm"]
   }
   post-processor "utm-vagrant" {
     compression_level = 9
     output            = "${local.build_complete_dir}/${var.os_name}-${var.os_version}-${var.os_arch}.{{ .Provider }}.box"
     vagrantfile_template = var.is_windows ? "${path.root}/vagrantfile-windows-utm.template" : (
       var.os_name == "freebsd" ? "${path.root}/vagrantfile-freebsd-utm.template" : (
-        var.os_name == "omnios" || var.os_name == "solaris" ? "${path.root}/vagrantfile-omnios-utm.template" : "${path.root}/vagrantfile-utm.template"
+        var.os_name == "omnios" || var.os_name == "solaris" ? "${path.root}/vagrantfile-omnios-utm.template" : (
+          var.os_name == "macos" ? "${path.root}/vagrantfile-macos-utm.template" : "${path.root}/vagrantfile-utm.template"
+        )
       )
     )
     architecture = "${var.os_arch == "x86_64" ? "amd64" : var.os_arch == "aarch64" ? "arm64" : var.os_arch}"

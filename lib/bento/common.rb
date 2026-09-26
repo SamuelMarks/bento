@@ -6,15 +6,15 @@
 # @description
 #   Provides cross-cutting helper methods for console banner output, timing,
 #   Vagrant Cloud authentication checks, metadata parsing, YAML configuration loading,
-#   and proprietary OS classification.
+#   host platform inspection, and proprietary OS classification.
 #
 
-require 'benchmark' unless defined?(Benchmark)
-require 'fileutils' unless defined?(FileUtils)
-require 'json' unless defined?(JSON)
-require 'tempfile' unless defined?(Tempfile)
+require 'benchmark'
+require 'fileutils'
+require 'json'
+require 'tempfile'
 require 'yaml'
-require 'mixlib/shellout' unless defined?(Mixlib::ShellOut)
+require 'mixlib/shellout'
 
 MEGABYTE = 1024.0 * 1024.0
 
@@ -48,6 +48,7 @@ module Common
   #
   # @param [String] cmd Shell command string to execute.
   # @return [Mixlib::ShellOut] ShellOut execution instance.
+  # @raise [Mixlib::ShellOut::ShellCommandFailed] If command returns non-zero.
   #
   def shellout(cmd)
     info "Shelling out to run #{cmd}"
@@ -89,10 +90,10 @@ module Common
   end
 
   #
-  # Formats a duration in seconds into a human-readable minutes and seconds string.
+  # Formats elapsed time in seconds into minutes and hundredths of seconds.
   #
   # @param [Numeric, NilClass] total Total elapsed time in seconds.
-  # @return [String] Formatted duration string (e.g., '2m15.50s').
+  # @return [String] Formatted duration string (e.g., '2m5.00s').
   #
   def duration(total)
     total = 0 if total.nil?
@@ -102,21 +103,21 @@ module Common
   end
 
   #
-  # Reads and parses a JSON box metadata file.
+  # Parses a JSON box metadata file into a Ruby Hash.
   #
-  # @param [String] metadata_file File path to the JSON metadata file.
-  # @return [Hash] Parsed JSON metadata hash.
+  # @param [String] metadata_file Path to the metadata JSON file.
+  # @return [Hash] Parsed metadata contents.
   #
   def box_metadata(metadata_file)
     JSON.parse(File.read(metadata_file))
   end
 
   #
-  # Globs for metadata files in build or testing directories based on flags and architecture.
+  # Discovers build metadata JSON files matching host architecture.
   #
-  # @param [Boolean] arch_support Whether to append host architecture filter to glob.
-  # @param [Boolean] upload Whether to look in testing_passed rather than build_complete.
-  # @return [Array<String>] Matching metadata file paths.
+  # @param [Boolean] arch_support Whether to scope file patterns by architecture suffix.
+  # @param [Boolean] upload Whether to look in testing_passed directory rather than build_complete.
+  # @return [Array<String>] List of matching metadata file paths.
   #
   def metadata_files(arch_support = false, upload = false)
     arch = if RbConfig::CONFIG['host_cpu'] == 'arm64'
@@ -133,20 +134,19 @@ module Common
   end
 
   #
-  # Loads and parses the root builds.yml configuration file.
+  # Loads repository build configuration from builds.yml.
   #
-  # @return [Hash] Configuration hash from builds.yml.
+  # @return [Hash] Parsed YAML configuration.
   #
   def builds_yml
     YAML.load_file('builds.yml')
   end
 
   #
-  # Determines whether an operating system distribution requires private distribution
-  # due to commercial or proprietary licensing restrictions.
+  # Determines if a given box name belongs to a proprietary/restricted OS.
   #
-  # @param [String] boxname Box name string to evaluate.
-  # @return [Boolean] True if proprietary/commercial, false if open/public.
+  # @param [String] boxname Target box basename.
+  # @return [Boolean] True if the OS is proprietary (e.g., macOS, Windows), false otherwise.
   #
   def private_box?(boxname)
     proprietary_os_list = %w(macos windows sles solaris rhel)
@@ -159,24 +159,53 @@ module Common
   # @return [Boolean] True if running on macOS.
   #
   def macos?
-    !(RUBY_PLATFORM =~ /darwin/).nil?
+    !!(RUBY_PLATFORM =~ /darwin/)
   end
 
   #
-  # Checks whether the current host platform is a Unix-like system.
+  # Checks whether the current host CPU is Apple Silicon / ARM64.
   #
-  # @return [Boolean] True if Unix-like, false on Windows.
+  # @return [Boolean] True if running on an ARM64/Apple Silicon architecture.
+  #
+  def apple_silicon?
+    host_cpu = RbConfig::CONFIG['host_cpu']
+    host_cpu == 'arm64' || host_cpu == 'aarch64'
+  end
+
+  #
+  # Enforces that macOS virtualization builds only execute on genuine Apple-branded hardware
+  # running macOS on Apple Silicon architecture, as required by Apple SLA Section 2.B(iii).
+  #
+  # @return [Boolean] True if host meets all legal and hardware requirements.
+  # @raise [RuntimeError] If host is not macOS or not running on Apple Silicon.
+  #
+  def verify_macos_build_host!
+    unless macos?
+      raise 'macOS virtualization builds legally and technically require genuine Apple-branded hardware running macOS.'
+    end
+
+    unless apple_silicon?
+      raise 'Modern macOS virtualization in Bento requires Apple Silicon (aarch64 / arm64) hardware.'
+    end
+
+    true
+  end
+
+  #
+  # Checks whether the current host platform is Unix-like (non-Windows).
+  #
+  # @return [Boolean] True if running on Unix-like platform.
   #
   def unix?
     !windows?
   end
 
   #
-  # Checks whether the current host platform is Windows.
+  # Checks whether the current host platform is Microsoft Windows.
   #
   # @return [Boolean] True if running on Windows.
   #
   def windows?
-    !(RUBY_PLATFORM =~ /mswin|mingw|windows/).nil?
+    !!(RUBY_PLATFORM =~ /mswin|mingw|windows/)
   end
 end

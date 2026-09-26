@@ -1,0 +1,31 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+#
+# @file vagrantfile-macos.template
+# @brief Vagrant configuration template for macOS guests on Apple Silicon
+# @description
+#   Configures the Vagrant environment for running macOS virtual machines on Apple Silicon.
+#   Notice: In accordance with Apple SLA Section 2.B(iii), virtual macOS instances may only
+#   be run on genuine Apple-branded hardware for software development or personal use.
+#
+
+Vagrant.configure(2) do |config|
+  # Guest OS identification
+  config.vm.guest = :darwin
+  config.vm.communicator = "ssh"
+
+  # Default SSH credentials
+  config.ssh.username = "vagrant"
+  config.ssh.password = "vagrant"
+  config.ssh.insert_key = false
+
+  # Use rsync for folder synchronization on Apple Virtualization guests
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+
+  # Parallels provider configuration
+  config.vm.provider "parallels" do |prl|
+    prl.cpus = 4
+    prl.memory = 4096
+  end
+end
