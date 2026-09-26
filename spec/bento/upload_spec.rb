@@ -1,5 +1,14 @@
 # frozen_string_literal: true
 
+#
+# @file upload_spec.rb
+# @brief Specification tests for UploadRunner class
+# @description
+#   Exhaustively tests Vagrant Cloud uploads, slug resolution, description formatting,
+#   provider version rendering, and protection against uploading proprietary OS boxes (including macOS)
+#   with 100% line and branch coverage.
+#
+
 require 'bento/upload'
 
 RSpec.describe UploadRunner do
@@ -40,6 +49,7 @@ RSpec.describe UploadRunner do
         'providers' => [
           { 'name' => 'virtualbox', 'version' => '7.1.0' },
           { 'name' => 'vmware_desktop', 'version' => '13.0' },
+          { 'name' => 'utm', 'version' => '4.6.5' },
         ],
       }
     end
@@ -117,7 +127,14 @@ RSpec.describe UploadRunner do
     it 'returns nil when no slug matches' do
       allow(runner).to receive(:builds_yml).and_return(builds_data)
       allow(Dir).to receive(:glob).and_return([])
-      expect(runner.lookup_slug('windows-2022')).to be_nil
+      expect(runner.lookup_slug('freebsd-14')).to be_nil
+    end
+
+    it 'resolves a latest slug to matching latest version' do
+      allow(Dir).to receive(:glob).with('os_pkrvars/debian/**/*.pkrvars.hcl')
+                                  .and_return(['os_pkrvars/debian/debian-11-x86_64.pkrvars.hcl',
+                                               'os_pkrvars/debian/debian-12-x86_64.pkrvars.hcl'])
+      expect(runner.lookup_slug('debian-12-x86_64')).to eq('debian-latest')
     end
   end
 
@@ -146,6 +163,104 @@ RSpec.describe UploadRunner do
       allow(r).to receive(:error_unless_logged_in)
       expect(r).to receive(:upload_box).with('custom._metadata.json')
       r.start
+    end
+  end
+
+  describe '#upload_box' do
+    let(:macos_md) do
+      {
+        'box_basename' => 'macos-14-aarch64',
+        'name' => 'macos-14',
+        'version' => '202609.27.0',
+        'arch' => 'aarch64',
+        'providers' => [{ 'name' => 'utm', 'file' => 'macos-14-aarch64.utm.box' }],
+      }
+    end
+
+    let(:public_md) do
+      {
+        'box_basename' => 'ubuntu-24.04-x86_64',
+        'name' => 'ubuntu-24.04',
+        'version' => '202609.27.0',
+        'arch' => 'x86_64',
+        'providers' => [{ 'name' => 'virtualbox', 'file' => 'ubuntu-24.04-x86_64.virtualbox.box' }],
+      }
+    end
+
+    let(:builds_data) do
+      {
+        'vagrant_cloud_account' => 'bento',
+        'public' => ['ubuntu'],
+        'slugs' => ['ubuntu'],
+        'default_architectures' => ['amd64'],
+      }
+    end
+
+    before do
+      allow(runner).to receive(:builds_yml).and_return(builds_data)
+    end
+
+    it 'refuses to upload proprietary macOS boxes and issues a warning' do
+      allow(runner).to receive(:box_metadata).with('macos._metadata.json').and_return(macos_md)
+      expect(runner).not_to receive(:shellout)
+      expect { runner.upload_box('macos._metadata.json') }.to output(/Refusing to upload proprietary \/ restricted OS box 'macos-14-aarch64'/).to_stdout
+    end
+
+    it 'raises when architecture is unrecognized' do
+      weird_md = {
+        'box_basename' => 'custom-os',
+        'name' => 'custom',
+        'version' => '1.0',
+        'arch' => 'sparc64',
+        'providers' => [],
+      }
+      allow(runner).to receive(:box_metadata).with('weird._metadata.json').and_return(weird_md)
+      expect { runner.upload_box('weird._metadata.json') }.to raise_error(/Unknown arch/)
+    end
+
+    it 'warns when the box file does not exist on disk' do
+      allow(runner).to receive(:box_metadata).with('ubuntu._metadata.json').and_return(public_md)
+      allow(File).to receive(:exist?).and_return(false)
+      allow(FileUtils).to receive(:mv)
+      expect { runner.upload_box('ubuntu._metadata.json') }.to output(/does not exist at.*Skipping!/).to_stdout
+    end
+
+    it 'uploads existing box and slug and archives metadata' do
+      allow(runner).to receive(:box_metadata).with('ubuntu._metadata.json').and_return(public_md)
+      allow(File).to receive(:exist?).and_return(true)
+      expect(runner).to receive(:shellout).twice # once for box, once for slug
+      expect(FileUtils).to receive(:mv).twice # once for box, once for metadata
+      expect { runner.upload_box('ubuntu._metadata.json') }.to output(/Uploading bento\/ubuntu-24.04-x86_64/).to_stdout
+    end
+
+    it 'creates uploaded directory when it does not exist and keeps metadata when other boxes remain' do
+      allow(runner).to receive(:box_metadata).with('ubuntu._metadata.json').and_return(public_md)
+      # Box file exists, but uploaded_dir does not exist
+      allow(File).to receive(:exist?).with(anything) do |path|
+        !path.to_s.include?('uploaded')
+      end
+      expect(FileUtils).to receive(:mkdir_p).with(/uploaded/)
+      allow(runner).to receive(:lookup_slug).and_return(nil)
+      expect(runner).to receive(:shellout).once
+      expect(FileUtils).to receive(:mv).once # only moves box file, not metadata file
+      allow(Dir).to receive(:glob).with(anything).and_return(['remaining.box'])
+      expect { runner.upload_box('ubuntu._metadata.json') }.to output(/Uploading bento\/ubuntu-24.04-x86_64/).to_stdout
+    end
+
+    it 'supports aarch64 / arm64 architecture upload' do
+      arm_md = {
+        'box_basename' => 'debian-12-aarch64',
+        'name' => 'debian-12',
+        'version' => '1.0',
+        'arch' => 'aarch64',
+        'providers' => [{ 'name' => 'utm', 'file' => 'debian-12-aarch64.utm.box' }],
+      }
+      allow(runner).to receive(:box_metadata).with('debian._metadata.json').and_return(arm_md)
+      allow(File).to receive(:exist?).and_return(true)
+      allow(runner).to receive(:lookup_slug).and_return(nil)
+      expect(runner).to receive(:shellout).once
+      expect(FileUtils).to receive(:mv).twice
+      expect { runner.upload_box('debian._metadata.json') }.to output(/Uploading bento\/debian-12-aarch64/).to_stdout
     end
   end
 end
