@@ -65,16 +65,19 @@ vagrant plugin install vagrant_utm
 
 Bento provides the automated `macos-utm-builder.sh` script to manage IPSW acquisition, integrity verification, bundle generation, and packaging.
 
-### Quick Start (macOS 14 Sonoma)
+### Quick Start (macOS 27.2 Default)
+
+```bash
+./macos-utm-builder.sh
+```
+
+### Building macOS 14 Sonoma, macOS 15 Sequoia, macOS 26 Tahoe, or macOS 27.2
 
 ```bash
 ./macos-utm-builder.sh --version 14
-```
-
-### Building macOS 15 Sequoia
-
-```bash
 ./macos-utm-builder.sh --version 15 --cpus 4 --memory 8192
+./macos-utm-builder.sh --version 26 --cpus 4 --memory 8192
+./macos-utm-builder.sh --version 27.2 --cpus 4 --memory 8192
 ```
 
 ### Available Command-Line Options
@@ -83,12 +86,12 @@ Bento provides the automated `macos-utm-builder.sh` script to manage IPSW acquis
 Usage: ./macos-utm-builder.sh [OPTIONS]
 
 Options:
-  --version <14|15>    Target macOS version (default: 14)
-  --cpus <count>       Number of vCPUs to allocate (default: 4)
-  --memory <MB>        Memory in MB to allocate (default: 4096)
-  --disk-size <GB>     Disk image size in GB (default: 64)
-  --dry-run            Simulate operations without downloading or running
-  -h, --help           Display usage information
+  --version <14|15|26|27|27.2> Target macOS version (default: 27.2)
+  --cpus <count>               Number of vCPUs to allocate (default: 4)
+  --memory <MB>                Memory in MB to allocate (default: 4096)
+  --disk-size <GB>             Disk image size in GB (default: 64)
+  --dry-run                    Simulate operations without downloading or running
+  -h, --help                   Display usage information
 ```
 
 The completed Vagrant box will be written to:
@@ -101,7 +104,7 @@ The completed Vagrant box will be written to:
 ### Adding the Box to Vagrant
 
 ```bash
-vagrant box add --name bento/macos-14-arm64 builds/build_complete/macos-14-aarch64.utm.box
+vagrant box add --name bento/macos-27.2-arm64 builds/build_complete/macos-27.2-aarch64.utm.box
 ```
 
 ### Initializing a Vagrant Project
@@ -110,7 +113,7 @@ Create a `Vagrantfile` in a test directory:
 
 ```ruby
 Vagrant.configure("2") do |config|
-  config.vm.box = "bento/macos-14-arm64"
+  config.vm.box = "bento/macos-27.2-arm64"
   config.vm.guest = :darwin
   config.vm.communicator = "ssh"
 

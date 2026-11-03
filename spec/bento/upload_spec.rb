@@ -177,6 +177,16 @@ RSpec.describe UploadRunner do
       }
     end
 
+    let(:macos_27_md) do
+      {
+        'box_basename' => 'macos-27.2-aarch64',
+        'name' => 'macos-27.2',
+        'version' => '202611.03.0',
+        'arch' => 'aarch64',
+        'providers' => [{ 'name' => 'utm', 'file' => 'macos-27.2-aarch64.utm.box' }],
+      }
+    end
+
     let(:public_md) do
       {
         'box_basename' => 'ubuntu-24.04-x86_64',
@@ -204,6 +214,12 @@ RSpec.describe UploadRunner do
       allow(runner).to receive(:box_metadata).with('macos._metadata.json').and_return(macos_md)
       expect(runner).not_to receive(:shellout)
       expect { runner.upload_box('macos._metadata.json') }.to output(/Refusing to upload proprietary \/ restricted OS box 'macos-14-aarch64'/).to_stdout
+    end
+
+    it 'refuses to upload proprietary macOS 27 boxes and issues a warning' do
+      allow(runner).to receive(:box_metadata).with('macos-27._metadata.json').and_return(macos_27_md)
+      expect(runner).not_to receive(:shellout)
+      expect { runner.upload_box('macos-27._metadata.json') }.to output(%r{Refusing to upload proprietary / restricted OS box 'macos-27.2-aarch64'}).to_stdout
     end
 
     it 'raises when architecture is unrecognized' do

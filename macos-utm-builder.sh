@@ -12,13 +12,13 @@
 #   ./macos-utm-builder.sh [OPTIONS]
 #
 # Options:
-#   --version <14|15>    Target macOS version (default: 14)
-#   --cpus <count>       Number of vCPUs to allocate (default: 4)
-#   --memory <MB>        Memory in MB to allocate (default: 4096)
-#   --disk-size <GB>     Disk image size in GB (default: 64)
-#   --package-box        Package the UTM box and register in Vagrant inventory
-#   --dry-run            Simulate operations without downloading or running
-#   -h, --help           Display this help message
+#   --version <14|15|26|27|27.2> Target macOS version (default: 27.2)
+#   --cpus <count>               Number of vCPUs to allocate (default: 4)
+#   --memory <MB>                Memory in MB to allocate (default: 4096)
+#   --disk-size <GB>             Disk image size in GB (default: 64)
+#   --package-box                Package the UTM box and register in Vagrant inventory
+#   --dry-run                    Simulate operations without downloading or running
+#   -h, --help                   Display this help message
 #
 # Prerequisites:
 #   - Apple Silicon Mac (M1/M2/M3/M4) running macOS 14+ (Sonoma/Sequoia)
@@ -33,7 +33,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
 # Default parameters
-MACOS_VERSION="14"
+MACOS_VERSION="27.2"
 VM_CPUS="4"
 VM_MEM="4096"
 VM_DISK_GB="64"
@@ -81,13 +81,13 @@ usage() {
 Usage: ./macos-utm-builder.sh [OPTIONS]
 
 Options:
-  --version <14|15>    Target macOS version (default: 14)
-  --cpus <count>       Number of vCPUs to allocate (default: 4)
-  --memory <MB>        Memory in MB to allocate (default: 4096)
-  --disk-size <GB>     Disk image size in GB (default: 64)
-  --package-box        Package the UTM box and register in Vagrant inventory
-  --dry-run            Simulate operations without executing
-  -h, --help           Display this help message
+  --version <14|15|26|27|27.2> Target macOS version (default: 27.2)
+  --cpus <count>               Number of vCPUs to allocate (default: 4)
+  --memory <MB>                Memory in MB to allocate (default: 4096)
+  --disk-size <GB>             Disk image size in GB (default: 64)
+  --package-box                Package the UTM box and register in Vagrant inventory
+  --dry-run                    Simulate operations without executing
+  -h, --help                   Display this help message
 EOF
 }
 
@@ -169,13 +169,19 @@ parse_args() {
 #
 # Resolves IPSW URL and SHA256 checksum from the corresponding os_pkrvars file.
 #
-# @param $1 Target macOS major version (e.g. 14, 15).
+# @param $1 Target macOS version (e.g. 27.2, 27, 26, 15, 14).
 # @return Sets global IPSW_URL and IPSW_CHECKSUM.
 #
 resolve_ipsw_metadata() {
   local pkrvars_file="os_pkrvars/macos/macos-${1}-aarch64.pkrvars.hcl"
   if [ ! -f "${pkrvars_file}" ]; then
-    log_error "Configuration file not found: ${pkrvars_file}"
+    local major_ver="${1%%.*}"
+    local fallback_file="os_pkrvars/macos/macos-${major_ver}-aarch64.pkrvars.hcl"
+    if [ -f "${fallback_file}" ]; then
+      pkrvars_file="${fallback_file}"
+    else
+      log_error "Configuration file not found: ${pkrvars_file}"
+    fi
   fi
 
   IPSW_URL="$(grep 'parallels_ipsw_url' "${pkrvars_file}" | head -1 | cut -d '"' -f 2 || true)"
