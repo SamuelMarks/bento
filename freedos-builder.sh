@@ -67,7 +67,7 @@ log_error() {
 #
 # @function usage
 # @description Displays CLI usage information and available subcommands.
-# @noargs
+# @param [void] None.
 # @return [void]
 #
 usage() {
@@ -93,7 +93,7 @@ EOF
 #
 # @function resolve_qemu_binary
 # @description Resolves the QEMU system binary for running 16/32-bit x86 FreeDOS.
-# @noargs
+# @param [void] None.
 # @return [String] Prints the resolved QEMU executable name.
 #
 resolve_qemu_binary() {
@@ -110,7 +110,7 @@ resolve_qemu_binary() {
 #
 # @function resolve_qemu_accel
 # @description Determines the appropriate QEMU accelerator for the current host CPU/OS.
-# @noargs
+# @param [void] None.
 # @return [String] Prints accelerator string (tcg, hvf:tcg, or kvm:tcg).
 #
 resolve_qemu_accel() {
@@ -128,7 +128,7 @@ resolve_qemu_accel() {
 # @description
 #   Downloads FD13-LiteUSB.zip into builds/iso/ if not already cached and
 #   extracts FD13LITE.img to builds/freedos-1.3.img.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 fetch_freedos_image() {
@@ -188,6 +188,9 @@ inject_bento_agent_into_image() {
       cp -f "${SCRIPT_DIR}/packer_templates/scripts/freedos/SERINIT.COM" "${_mnt}/BENTO/SERINIT.COM"
       cp -f "${SCRIPT_DIR}/packer_templates/scripts/freedos/B64DEC.COM" "${_mnt}/BENTO/B64DEC.COM"
       cp -f "${SCRIPT_DIR}/packer_templates/scripts/freedos/B64ENC.COM" "${_mnt}/BENTO/B64ENC.COM"
+      cp -f "${SCRIPT_DIR}/packer_templates/scripts/freedos/SERGET.COM" "${_mnt}/BENTO/SERGET.COM"
+      cp -f "${SCRIPT_DIR}/packer_templates/scripts/freedos/SERGET.COM" "${_mnt}/SERGET.COM"
+      cp -f "${_mnt}/BENTO/RUNCMD.BAT" "${_mnt}/RUNCMD.BAT"
       if [ -d "${BUILDS_DIR}/freedos_watcom_stage/BENTO" ]; then
         cp -Rf "${BUILDS_DIR}/freedos_watcom_stage/BENTO/"* "${_mnt}/BENTO/" 2>/dev/null || true
       fi
@@ -292,7 +295,7 @@ EOF
 # @description
 #   Packages the bootable FreeDOS disk image into Vagrant .box archives for
 #   qemu, libvirt, and utm across both aarch64 and x86_64.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_box() {
@@ -346,7 +349,7 @@ register_box_in_vagrant_dir() {
 # @description
 #   Registers the built FreeDOS Vagrant boxes (`bento/freedos` and
 #   `bento/freedos-1.3`) in Vagrant so they appear in `vagrant box list`.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_register() {
@@ -374,7 +377,7 @@ cmd_register() {
 #
 # @function cmd_all
 # @description Runs build, box packaging, and Vagrant registration end-to-end.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_all() {
@@ -387,7 +390,7 @@ cmd_all() {
 #
 # @function cmd_run
 # @description Boots the standalone FreeDOS VM via QEMU with Telnet serial and D: sync disk.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_run() {
@@ -535,7 +538,7 @@ cmd_snapshot() {
 #
 # @function cmd_status
 # @description Displays current status of FreeDOS artifacts, sockets, and boxes.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_status() {
@@ -552,7 +555,7 @@ cmd_status() {
 #
 # @function cmd_clean
 # @description Cleans up temporary sockets and background QEMU processes for FreeDOS.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_clean() {

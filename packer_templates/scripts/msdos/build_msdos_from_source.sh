@@ -100,7 +100,7 @@ verify_upstream_layout() {
 #   Downloads the microsoft/ms-dos tarball into builds/iso/microsoft-ms-dos.tar.gz
 #   if not already cached, verifies its SHA-256 checksum, extracts it to
 #   builds/msdos_upstream, and validates the extracted directory structure.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 fetch_msdos_repo() {
@@ -213,6 +213,116 @@ SETENV_EOF
 }
 
 #
+# @function prepare_msdos4_stage1_disks
+# @description
+#   Auto-generates the Stage 1 bootstrap host disk (`msdos4_host_c.img`) and
+#   32MB FAT16 source build disk (`msdos4_build_d.raw`) when `builds/msdos4_compiled`
+#   is not yet populated on a fresh checkout.
+# @param [String] host_c Path to the Stage 1 C: boot image.
+# @param [String] build_d Path to the Stage 1 D: source/build image.
+# @param [String] stage_dir Staged MS-DOS 4.00 directory containing normalized SRC.
+# @return [Integer] Returns 0 on success.
+#
+prepare_msdos4_stage1_disks() {
+  _hc="$1"
+  _bd="$2"
+  _st="$3"
+  _fd_zip="${ISO_DIR}/FD13-LiteUSB.zip"
+  _fd_url="${FREEDOS_LITEUSB_URL:-https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/1.3/official/FD13-LiteUSB.zip}"
+
+  BENTO_DRY_RUN=1 "${SCRIPT_DIR}/provision_msdos.sh" >/dev/null 2>&1 || true
+
+  if [ ! -f "$_hc" ]; then
+    if [ ! -f "$_fd_zip" ]; then
+      log_msg "Downloading Stage 1 bootstrap image archive from ${_fd_url}..."
+      curl -fL --retry 3 -o "${_fd_zip}.part" "$_fd_url"
+      mv "${_fd_zip}.part" "$_fd_zip"
+    fi
+    _ext_tmp=$(mktemp -d "${TMPDIR:-/tmp}/msdos4-fd.XXXXXX")
+    unzip -q -o "$_fd_zip" -d "$_ext_tmp"
+    _found_fd=$(find "$_ext_tmp" -iname "*.img" | head -n 1)
+    if [ -n "$_found_fd" ] && [ -f "$_found_fd" ]; then
+      cp -f "$_found_fd" "$_hc"
+    fi
+    rm -rf "$_ext_tmp"
+
+    if [ "$(uname -s)" = "Darwin" ] && command -v hdiutil >/dev/null 2>&1 && [ -f "$_hc" ]; then
+      _mnt_c=$(mktemp -d "${TMPDIR:-/tmp}/msdos4-hc.XXXXXX")
+      if hdiutil attach -nobrowse -imagekey diskimage-class=CRawDiskImage -mountpoint "$_mnt_c" "$_hc" >/dev/null 2>&1; then
+        cp -f "${SCRIPT_DIR}/SHUTDOWN.COM" "${_mnt_c}/SHUTDOWN.COM"
+        awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' <<'FDCFG_EOF' > "${_mnt_c}/FDCONFIG.SYS"
+!COUNTRY=001,858,C:\FDOS\BIN\COUNTRY.SYS
+!LASTDRIVE=Z
+!BUFFERS=40
+!FILES=99
+DOS=HIGH
+SHELLHIGH=C:\FDOS\BIN\COMMAND.COM C:\FDOS\BIN /E:2048 /P=C:\FDAUTO.BAT
+FDCFG_EOF
+        awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' <<'FDAUTO_EOF' > "${_mnt_c}/FDAUTO.BAT"
+@ECHO OFF
+SET DOSDIR=C:\FDOS
+SET PATH=D:\SRC\TOOLS;C:\FDOS\BIN;C:\
+SET TEMP=C:\TEMP
+IF NOT EXIST C:\TEMP MKDIR C:\TEMP
+IF EXIST D:\BUILD40.BAT CALL D:\BUILD40.BAT
+C:\SHUTDOWN.COM
+FDAUTO_EOF
+        cp -f "${_mnt_c}/FDAUTO.BAT" "${_mnt_c}/AUTOEXEC.BAT"
+        sync
+        hdiutil detach "$_mnt_c" >/dev/null 2>&1 || hdiutil detach -force "$_mnt_c" >/dev/null 2>&1 || true
+      fi
+      rmdir "$_mnt_c" 2>/dev/null || true
+    fi
+  fi
+
+  if [ ! -f "$_bd" ]; then
+    ruby -I "${REPO_ROOT}/lib" -rbento/vagrant_msdos -e '
+      Bento::VagrantMsdos::SyncedFolder.new.send(:format_fat16_image, ARGV[0], 32)
+    ' "$_bd"
+    if [ "$(uname -s)" = "Darwin" ] && command -v hdiutil >/dev/null 2>&1; then
+      _mnt_d=$(mktemp -d "${TMPDIR:-/tmp}/msdos4-bd.XXXXXX")
+      if hdiutil attach -nobrowse -imagekey diskimage-class=CRawDiskImage -mountpoint "$_mnt_d" "$_bd" >/dev/null 2>&1; then
+        mkdir -p "${_mnt_d}/SRC" "${_mnt_d}/OUT40"
+        cp -Rf "${_st}/SRC/"* "${_mnt_d}/SRC/" 2>/dev/null || true
+        awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' <<'BLD40_EOF' > "${_mnt_d}/BUILD40.BAT"
+@ECHO OFF
+D:
+CD \SRC
+SET BAKROOT=D:
+CALL SETENV.BAT
+CD \SRC\MESSAGES
+NMAKE
+CD \SRC\MAPPER
+NMAKE
+CD \SRC\INC
+NMAKE
+CD \SRC\BOOT
+NMAKE
+CD \SRC\BIOS
+NMAKE
+CD \SRC\DOS
+NMAKE
+CD \SRC\CMD\COMMAND
+NMAKE
+CD \SRC\CMD\FDISK
+NMAKE
+COPY \SRC\BOOT\MSBOOT.BIN \OUT40\MSBOOT.BIN
+COPY \SRC\BOOT\MSLOAD.COM \OUT40\MSLOAD.COM
+COPY \SRC\BIOS\IO.SYS \OUT40\IO.SYS
+COPY \SRC\DOS\MSDOS.SYS \OUT40\MSDOS.SYS
+COPY \SRC\CMD\COMMAND\COMMAND.COM \OUT40\COMMAND.COM
+COPY \SRC\CMD\FDISK\FDBOOT.BIN \OUT40\FDBOOT.BIN
+BLD40_EOF
+        sync
+        hdiutil detach "$_mnt_d" >/dev/null 2>&1 || hdiutil detach -force "$_mnt_d" >/dev/null 2>&1 || true
+      fi
+      rmdir "$_mnt_d" 2>/dev/null || true
+    fi
+  fi
+  return 0
+}
+
+#
 # @function compile_msdos_40_stage1
 # @description
 #   Compiles Microsoft MS-DOS 4.00 from `v4.0/src` inside a temporary Stage 1
@@ -238,11 +348,24 @@ compile_msdos_40_stage1() {
     _build_d="${BUILDS_DIR}/msdos4_build_d.raw"
     _stage1_log="${BUILDS_DIR}/msdos4_stage1.log"
 
+    if [ ! -f "$_host_c" ] || [ ! -f "$_build_d" ]; then
+      prepare_msdos4_stage1_disks "$_host_c" "$_build_d" "$_s40"
+    fi
+
     if [ -f "$_host_c" ] && [ -f "$_build_d" ] && command -v qemu-system-i386 >/dev/null 2>&1; then
       qemu-system-i386 -machine pc,accel=tcg -m 64M \
         -drive "file=${_host_c},format=raw,if=ide,index=0,media=disk" \
         -drive "file=${_build_d},format=raw,if=ide,index=1,media=disk,cache=writethrough" \
         -serial "file:${_stage1_log}" -display none
+
+      if [ "$(uname -s)" = "Darwin" ] && command -v hdiutil >/dev/null 2>&1; then
+        _mnt_out=$(mktemp -d "${TMPDIR:-/tmp}/msdos4-out.XXXXXX")
+        if hdiutil attach -nobrowse -imagekey diskimage-class=CRawDiskImage -mountpoint "$_mnt_out" "$_build_d" >/dev/null 2>&1; then
+          cp -Rf "${_mnt_out}/OUT40/"* "$_comp40/" 2>/dev/null || true
+          hdiutil detach "$_mnt_out" >/dev/null 2>&1 || hdiutil detach -force "$_mnt_out" >/dev/null 2>&1 || true
+        fi
+        rmdir "$_mnt_out" 2>/dev/null || true
+      fi
     fi
   fi
 
@@ -272,7 +395,8 @@ compile_msdos_40_stage1() {
 # @function compile_msdos_20_components
 # @description
 #   Assembles the 16-bit PC-BIOS `IO.SYS` (with FAT12<->FAT16 translation and
-#   COM1/AUX support) for MS-DOS 2.0 using `nasm` and stages `v2.0/bin/MSDOS.SYS`
+#   COM1/AUX support) for MS-DOS 2.0 using `nasm` from `asm/io_msdos20.asm` if
+#   not already present in `builds/msdos20_compiled`, and stages `v2.0/bin/MSDOS.SYS`
 #   and `v2.0/bin/COMMAND.COM` (normalized so `VER` outputs `MS-DOS Version 2.00`).
 # @param [String] stage_dir Destination staging directory.
 # @return [Integer] Returns 0 on success.
@@ -284,6 +408,11 @@ compile_msdos_20_components() {
 
   if [ "${BENTO_DRY_RUN:-0}" = "1" ]; then
     return 0
+  fi
+
+  if [ ! -f "${_comp20}/IO.SYS" ] && command -v nasm >/dev/null 2>&1 && [ -f "${SCRIPT_DIR}/asm/io_msdos20.asm" ]; then
+    log_msg "Assembling MS-DOS 2.0 IO.SYS from ${SCRIPT_DIR}/asm/io_msdos20.asm..."
+    nasm -f bin "${SCRIPT_DIR}/asm/io_msdos20.asm" -o "${_comp20}/IO.SYS"
   fi
 
   if [ -f "${EXTRACT_ROOT}/v2.0/bin/MSDOS.SYS" ]; then
@@ -310,11 +439,12 @@ compile_msdos_20_components() {
 #
 # @function compile_msdos_125_components
 # @description
-#   Stages the compiled MS-DOS 1.25 `IO.SYS` (with bidirectional COM1 console
-#   redirection, FAT12<->FAT16 translation, and DOS 2.0+ handle-to-FCB bridge),
-#   `MSDOS.SYS` (compiled from `v1.25/source/STDDOS.ASM` + `MSDOS.ASM`),
-#   `COMMAND.COM` (compiled from `v1.25/source/COMMAND.ASM`), and 16-bit
-#   `VER.COM` and `ECHO.COM` utilities.
+#   Assembles/generates the MS-DOS 1.25 `IO.SYS` (`asm/io_msdos125.asm`),
+#   `VER.COM` (`asm/ver_com.asm`), and `ECHO.COM` (`asm/echo_com.asm`) using
+#   `nasm` when missing from `builds/msdos125_compiled`, compiles `MSDOS.SYS`
+#   (`v1.25/source/STDDOS.ASM` + `MSDOS.ASM` with `BIOSSEG EQU 70H`) and
+#   `COMMAND.COM` (`v1.25/source/COMMAND.ASM`) via the 16-bit MASM/LINK Stage 1
+#   toolchain when missing, and copies all 5 components into the staging directory.
 # @param [String] stage_dir Destination staging directory.
 # @return [Integer] Returns 0 on success.
 #
@@ -325,6 +455,80 @@ compile_msdos_125_components() {
 
   if [ "${BENTO_DRY_RUN:-0}" = "1" ]; then
     return 0
+  fi
+
+  if command -v nasm >/dev/null 2>&1; then
+    if [ ! -f "${_comp125}/IO.SYS" ] && [ -f "${SCRIPT_DIR}/asm/io_msdos125.asm" ]; then
+      log_msg "Assembling MS-DOS 1.25 IO.SYS from ${SCRIPT_DIR}/asm/io_msdos125.asm..."
+      nasm -f bin "${SCRIPT_DIR}/asm/io_msdos125.asm" -o "${_comp125}/IO.SYS"
+    fi
+    if [ ! -f "${_comp125}/VER.COM" ] && [ -f "${SCRIPT_DIR}/asm/ver_com.asm" ]; then
+      log_msg "Assembling MS-DOS 1.25 VER.COM from ${SCRIPT_DIR}/asm/ver_com.asm..."
+      nasm -f bin "${SCRIPT_DIR}/asm/ver_com.asm" -o "${_comp125}/VER.COM"
+    fi
+    if [ ! -f "${_comp125}/ECHO.COM" ] && [ -f "${SCRIPT_DIR}/asm/echo_com.asm" ]; then
+      log_msg "Assembling MS-DOS 1.25 ECHO.COM from ${SCRIPT_DIR}/asm/echo_com.asm..."
+      nasm -f bin "${SCRIPT_DIR}/asm/echo_com.asm" -o "${_comp125}/ECHO.COM"
+    fi
+  fi
+
+  if { [ ! -f "${_comp125}/MSDOS.SYS" ] || [ ! -f "${_comp125}/COMMAND.COM" ]; } && [ -d "${EXTRACT_ROOT}/v1.25/source" ]; then
+    log_msg "Compiling MS-DOS 1.25 MSDOS.SYS and COMMAND.COM from v1.25/source/{STDDOS.ASM,MSDOS.ASM,COMMAND.ASM}..."
+    _host_c125="${BUILDS_DIR}/msdos4_host_c.img"
+    _build_d125="${BUILDS_DIR}/msdos125_build_d.raw"
+    if [ ! -f "$_host_c125" ]; then
+      prepare_msdos4_stage1_disks "$_host_c125" "${BUILDS_DIR}/msdos4_build_d.raw" "$_s125"
+    fi
+    if [ "$(uname -s)" = "Darwin" ] && command -v hdiutil >/dev/null 2>&1 && command -v qemu-system-i386 >/dev/null 2>&1; then
+      ruby -I "${REPO_ROOT}/lib" -rbento/vagrant_msdos -e '
+        Bento::VagrantMsdos::SyncedFolder.new.send(:format_fat16_image, ARGV[0], 16)
+      ' "$_build_d125"
+      _mnt125=$(mktemp -d "${TMPDIR:-/tmp}/msdos125-bd.XXXXXX")
+      if hdiutil attach -nobrowse -imagekey diskimage-class=CRawDiskImage -mountpoint "$_mnt125" "$_build_d125" >/dev/null 2>&1; then
+        mkdir -p "${_mnt125}/TOOLS" "${_mnt125}/V125"
+        cp -f "${EXTRACT_ROOT}/v4.0/src/TOOLS/MASM.EXE" "${_mnt125}/TOOLS/MASM.EXE"
+        cp -f "${EXTRACT_ROOT}/v4.0/src/TOOLS/LINK.EXE" "${_mnt125}/TOOLS/LINK.EXE"
+        LC_ALL=C tr -d '\032\015' < "${EXTRACT_ROOT}/v1.25/source/STDDOS.ASM" | LC_ALL=C awk '{ printf "%s\015\012", $0 }' > "${_mnt125}/V125/STDDOS.ASM"
+        LC_ALL=C tr -d '\032\015' < "${EXTRACT_ROOT}/v1.25/source/MSDOS.ASM" | sed 's/BIOSSEG EQU     40H/BIOSSEG EQU     70H/' | LC_ALL=C awk '{ printf "%s\015\012", $0 }' > "${_mnt125}/V125/MSDOS.ASM"
+        LC_ALL=C tr -d '\032\015' < "${EXTRACT_ROOT}/v1.25/source/COMMAND.ASM" | LC_ALL=C awk '{ printf "%s\015\012", $0 }' > "${_mnt125}/V125/COMMAND.ASM"
+        awk '{ sub(/\015$/, ""); printf "%s\015\012", $0 }' <<'BLD125_EOF' > "${_mnt125}/BUILD40.BAT"
+@ECHO OFF
+D:
+CD \V125
+D:\TOOLS\MASM.EXE STDDOS.ASM,MSDOS.OBJ,NUL,NUL;
+D:\TOOLS\LINK.EXE MSDOS.OBJ,MSDOS.EXE,NUL,NUL;
+D:\TOOLS\MASM.EXE COMMAND.ASM,COMMAND.OBJ,NUL,NUL;
+D:\TOOLS\LINK.EXE COMMAND.OBJ,COMMAND.EXE,NUL,NUL;
+BLD125_EOF
+        sync
+        hdiutil detach "$_mnt125" >/dev/null 2>&1 || hdiutil detach -force "$_mnt125" >/dev/null 2>&1 || true
+      fi
+      qemu-system-i386 -machine pc,accel=tcg -m 64M \
+        -drive "file=${_host_c125},format=raw,if=ide,index=0,media=disk" \
+        -drive "file=${_build_d125},format=raw,if=ide,index=1,media=disk,cache=writethrough" \
+        -serial "file:${BUILDS_DIR}/msdos125_stage1.log" -display none
+      if hdiutil attach -nobrowse -imagekey diskimage-class=CRawDiskImage -mountpoint "$_mnt125" "$_build_d125" >/dev/null 2>&1; then
+        if [ -f "${_mnt125}/V125/MSDOS.EXE" ]; then
+          cp -f "${_mnt125}/V125/MSDOS.EXE" "${_comp125}/MSDOS.EXE"
+          ruby -e '
+            b = File.binread(ARGV[0])
+            hdr = b[8, 2].unpack1("v") * 16
+            File.binwrite(ARGV[1], b[hdr..] || "".b)
+          ' "${_comp125}/MSDOS.EXE" "${_comp125}/MSDOS.SYS"
+        fi
+        if [ -f "${_mnt125}/V125/COMMAND.EXE" ]; then
+          cp -f "${_mnt125}/V125/COMMAND.EXE" "${_comp125}/COMMAND.EXE"
+          ruby -e '
+            b = File.binread(ARGV[0])
+            hdr = (b[8, 2].unpack1("v") * 16) + 0x100
+            File.binwrite(ARGV[1], b[hdr..] || "".b)
+          ' "${_comp125}/COMMAND.EXE" "${_comp125}/COMMAND.COM"
+        fi
+        hdiutil detach "$_mnt125" >/dev/null 2>&1 || hdiutil detach -force "$_mnt125" >/dev/null 2>&1 || true
+      fi
+      rmdir "$_mnt125" 2>/dev/null || true
+      rm -f "$_build_d125"
+    fi
   fi
 
   for _f125 in IO.SYS MSDOS.SYS COMMAND.COM VER.COM ECHO.COM; do

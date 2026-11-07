@@ -43,6 +43,24 @@ module Bento
       attr_accessor :work_dir
 
       #
+      # Applies a hash of FreeDOS configuration attributes onto a Vagrant root or
+      # sub-machine config object (`target_config.freedos`), bypassing `DummyConfig#respond_to?`
+      # limitations in multi-VM `Vagrantfile` definitions.
+      #
+      # @param [Object] target_config Vagrant configuration object (`config` or sub-machine `node`).
+      # @param [Hash] options Key-value pairs of FreeDOS config attributes (`:port`, `:host`, etc.).
+      # @return [Object] The configured `target_config.freedos` instance.
+      #
+      def self.configure_machine(target_config, options = {})
+        freedos_cfg = target_config.freedos
+        options.each do |key, value|
+          setter = :"#{key}="
+          freedos_cfg.public_send(setter, value) if freedos_cfg.respond_to?(setter)
+        end
+        freedos_cfg
+      end
+
+      #
       # Initializes a new Config instance with all attributes set to UNSET_VALUE.
       #
       # @return [Config] New configuration instance.
@@ -126,7 +144,7 @@ module Bento
       #
       def validate(_machine)
         errors = []
-        unless %i[telnet unix_socket].include?(@transport)
+        unless %i(telnet unix_socket).include?(@transport)
           errors << "Invalid transport #{@transport.inspect}; must be :telnet or :unix_socket."
         end
         if @transport == :telnet && (!@port.is_a?(Integer) || @port <= 0 || @port > 65_535)

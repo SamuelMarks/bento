@@ -71,16 +71,14 @@ RSpec.describe Bento::VagrantFreedos::CommandSsh do
         mach = double('machine', config: config, communicate: communicator, data_dir: tmpdir)
         out = StringIO.new
         allow(communicator).to receive(:execute).with('VER', error_check: false) do |_c, _o, &blk|
-          blk.call(:stdout, "FreeDOS 1.3
-")
+          blk.call(:stdout, "FreeDOS 1.3\n")
           0
         end
 
         allow(communicator).to receive(:close_socket)
         handler = described_class.new(['-c', 'VER'])
         expect(handler.execute_for_machine(mach, stdout: out)).to eq(0)
-        expect(out.string).to eq("FreeDOS 1.3
-")
+        expect(out.string).to eq("FreeDOS 1.3\n")
       end
     end
 

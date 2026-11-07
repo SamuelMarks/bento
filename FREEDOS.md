@@ -53,7 +53,7 @@ Because DOS does not run an OpenSSH daemon and has a strict 640 KB conventional 
 3. **`Bento::VagrantFreedos::Communicator` (`config.vm.communicator = :freedos`)**:
    - Wraps every command with `===START_<ID>===` and `===EXIT_<ID>:%ERRORLEVEL%===` markers.
    - Streams live `stdout` back to Vagrant and returns the exact integer DOS `%ERRORLEVEL%`.
-   - Transfers binary files (`.EXE`, `.COM`, `.OBJ`) over the serial link using `C:\BENTO\B64ENC.COM` and `C:\BENTO\B64DEC.COM`.
+   - Transfers binary files (`.EXE`, `.COM`, `.OBJ`) at high speed (~0.3s per binary) using `C:\BENTO\SERGET.COM` (`Communicator#fast_upload_file!`) as well as `C:\BENTO\B64ENC.COM` and `C:\BENTO\B64DEC.COM`.
 4. **`Bento::VagrantFreedos::CommandSsh` (`vagrant ssh` Polyfill)**:
    - **`vagrant ssh -c "D:\HELLO16.EXE"`**: Executes the DOS command non-interactively over the Telnet/Serial communicator, streams output, triggers Guest -> Host folder synchronization, and exits with the DOS `%ERRORLEVEL%`.
    - **`vagrant ssh`**: Opens an interactive raw-TTY terminal session connected directly to FreeDOS `C:\>` (`Ctrl+]` to disconnect).

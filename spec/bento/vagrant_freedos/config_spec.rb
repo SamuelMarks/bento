@@ -28,6 +28,11 @@ RSpec.describe Bento::VagrantFreedos::Config do
       expect(merged.host).to eq('127.0.0.2')
       expect(merged.port).to eq(12_323)
       expect(merged.sync_drive).to eq(described_class::UNSET_VALUE)
+
+      dummy_root = Struct.new(:freedos).new(described_class.new)
+      configured = described_class.configure_machine(dummy_root, port: 2329, host: '127.0.0.1', ignored: true)
+      expect(configured.port).to eq(2329)
+      expect(configured.host).to eq('127.0.0.1')
     end
   end
 
@@ -205,7 +210,7 @@ RSpec.describe Bento::VagrantFreedos::Plugin do
 
       Object.const_set(:Vagrant, minimal_vagrant)
       begin
-        load File.expand_path('../../../../lib/bento/vagrant_freedos.rb', __FILE__)
+        load File.expand_path('../../../lib/bento/vagrant_freedos.rb', __dir__)
       ensure
         Object.send(:remove_const, :Vagrant)
       end

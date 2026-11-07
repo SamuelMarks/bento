@@ -49,7 +49,7 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
         'C>VER',
         'MS-DOS Version 4.00',
         "C:#{bs}>ECHO ===EXIT_ABCD1234:0===",
-        '===EXIT_ABCD1234:0==='
+        '===EXIT_ABCD1234:0===',
       ].join(crlf)
       allow(mock_socket).to receive(:readpartial).and_return(response)
 
@@ -59,8 +59,7 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
       end
 
       expect(code).to eq(0)
-      expect(yielded).to eq([[:stdout, "MS-DOS Version 4.00
-"]])
+      expect(yielded).to eq([[:stdout, "MS-DOS Version 4.00\n"]])
       expect(communicator.sudo('VER')).to eq(0)
     end
 
@@ -157,6 +156,69 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
     end
   end
 
+  describe '#align_mz_header_for_dos125 and #fast_upload_file!' do
+    it 'aligns MZ headers to 32 paragraphs (512 bytes) and strips trailing debug info on MS-DOS 1.25' do
+      non_mz = 'PLAIN_COM_BINARY_DATA'
+      expect(communicator.align_mz_header_for_dos125(non_mz)).to eq(non_mz)
+
+      msdos_cfg.dos_version = '1.25'
+      msdos_cfg.finalize!
+      expect(communicator.align_mz_header_for_dos125('SHORT')).to eq('SHORT')
+      expect(communicator.align_mz_header_for_dos125('NO_MZ_HEADER_32_BYTES_LONG_12345')).to eq('NO_MZ_HEADER_32_BYTES_LONG_12345')
+
+      # Already 32-paragraph aligned MZ with e_cblp == 0 (full 512-byte page) and trailing DWARF bytes
+      aligned_hdr = 'MZ'.b + [0, 2, 0, 32].pack('v4') + ("\x00".b * 502)
+      aligned_body = "\xB8\x00\x4C\xCD\x21".b + ("\x90".b * 507)
+      aligned_exe = aligned_hdr + aligned_body + 'DWARF_TRAILING_BYTES'.b
+      res_aligned = communicator.align_mz_header_for_dos125(aligned_exe)
+      expect(res_aligned.bytesize).to eq(1024)
+      expect(res_aligned[8, 2].unpack1('v')).to eq(32)
+
+      # Unaligned MZ (e_cparhdr = 4 paragraphs = 64 bytes, e_cblp = 80, e_cp = 1) with trailing debug bytes
+      unaligned_hdr = 'MZ'.b + [80, 1, 0, 4].pack('v4') + ("\x00".b * 54)
+      code_body = "\xBA\x10\x00\xB4\x09\xCD\x21\xB8\x00\x4C\xCD\x21\x90\x90\x90\x90".b
+      unaligned_exe = unaligned_hdr + code_body + 'EXTRA_DEBUG_DATA'.b
+      res_padded = communicator.align_mz_header_for_dos125(unaligned_exe)
+      expect(res_padded[8, 2].unpack1('v')).to eq(32)
+      expect(res_padded.bytesize).to eq(512 + 16)
+      expect(res_padded[512, 16]).to eq(code_body)
+      expect(res_padded[2, 2].unpack1('v')).to eq(16)
+      expect(res_padded[4, 2].unpack1('v')).to eq(2)
+
+      # Already 32-paragraph aligned MZ with exact load_limit == bin.bytesize (no trailing bytes)
+      exact_aligned = aligned_hdr + aligned_body
+      expect(communicator.align_mz_header_for_dos125(exact_aligned).bytesize).to eq(1024)
+
+      # Edge case: e_cp == 0 and old_hdr_bytes > bin.bytesize
+      malformed_mz = 'MZ'.b + [0, 0, 0, 10].pack('v4') + ("\x00".b * 20)
+      expect(communicator.align_mz_header_for_dos125(malformed_mz)).to eq(malformed_mz)
+    end
+
+    it 'raises CommunicatorError when source file does not exist' do
+      expect do
+        communicator.fast_upload_file!('/nonexistent/test.exe', "C:#{bs}TEST.EXE")
+      end.to raise_error(Bento::VagrantMsdos::CommunicatorError, /does not exist/)
+    end
+
+    it 'streams Base64 payload to SERGET.COM in both hierarchical (v2.0/v4.0) and flat (v1.25) modes' do
+      Dir.mktmpdir do |tmpdir|
+        src = File.join(tmpdir, 'test.exe')
+        File.binwrite(src, 'MZ_TEST_BINARY')
+
+        allow(mock_socket).to receive(:write)
+        chunks_v4 = ['wait...', "===SERGET_RDY===#{crlf}", 'writing...', "===EXIT_ABCD1234:0===#{crlf}"]
+        allow(mock_socket).to receive(:readpartial) { chunks_v4.shift || '===EXIT_ABCD1234:0===' }
+        expect(communicator.fast_upload_file!(src, "C:#{bs}TEMP#{bs}TEST.EXE")).to be(true)
+
+        msdos_cfg.dos_version = '1.25'
+        msdos_cfg.finalize!
+        chunks_v1 = ["===SERGET_RDY===#{crlf}", "===EXIT_ABCD1234:0===#{crlf}"]
+        allow(mock_socket).to receive(:readpartial) { chunks_v1.shift || '===EXIT_ABCD1234:0===' }
+        expect(communicator.fast_upload_file!(src, "C:#{bs}TEST.EXE")).to be(true)
+      end
+    end
+  end
+
   describe '#upload, #download, and #normalize_dos_path' do
     it 'raises CommunicatorError when source path does not exist' do
       expect do
@@ -181,10 +243,8 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
         expect(communicator.upload(single_file, "D:#{bs}HELLO.ASM")).to be(true)
         expect(communicator.upload(tmpdir, '/vagrant')).to be(true)
         expect(communicator.upload(tmpdir, "D:#{bs}")).to be(true)
-        expect(executed_cmds.join("
-")).to include("C:#{bs}BENTO#{bs}B64DEC.COM")
-        expect(executed_cmds.join("
-")).to include("D:#{bs}sub")
+        expect(executed_cmds.join("\n")).to include("C:#{bs}BENTO#{bs}B64DEC.COM")
+        expect(executed_cmds.join("\n")).to include("D:#{bs}sub")
 
         # Now test MS-DOS 1.25 flat mode (supports_subdirectories? == false)
         msdos_cfg.dos_version = '1.25'
@@ -196,10 +256,8 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
         end
         expect(communicator.normalize_dos_path('/vagrant/sub/NESTED.INC')).to eq("D:#{bs}NESTED.INC")
         expect(communicator.upload(tmpdir, '/vagrant')).to be(true)
-        expect(flat_cmds.join("
-")).to include("C:#{bs}B64DEC.COM")
-        expect(flat_cmds.join("
-")).not_to include('MKDIR')
+        expect(flat_cmds.join("\n")).to include("C:#{bs}B64DEC.COM")
+        expect(flat_cmds.join("\n")).not_to include('MKDIR')
       end
     end
 
@@ -220,8 +278,7 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
         msdos_cfg.finalize!
         dest2 = File.join(tmpdir, 'out2.txt')
         allow(communicator).to receive(:execute) do |_cmd, _opts, &blk|
-          blk.call(:stdout, "PLAIN_TEXT_OUTPUT
-")
+          blk.call(:stdout, "PLAIN_TEXT_OUTPUT\n")
           0
         end
         expect(communicator.download("D:#{bs}OUT2.TXT", dest2)).to be(true)
@@ -244,9 +301,9 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
       expect(cleaned.bytes).to include(255)
       expect(cleaned).to end_with('HELLO')
       expect(reply_io.string.bytes).to eq([
-        described_class::IAC, described_class::NEG_REFUSE, 1,
-        described_class::IAC, described_class::NEG_DENY, 3
-      ])
+                                            described_class::IAC, described_class::NEG_REFUSE, 1,
+                                            described_class::IAC, described_class::NEG_DENY, 3
+                                          ])
 
       cleaned_no_sock = communicator.strip_telnet_iac(raw, nil)
       expect(cleaned_no_sock).to end_with('HELLO')
@@ -257,7 +314,7 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
       allow(mock_socket).to receive(:write)
       chunks = [
         "Pre-start line#{crlf}===START_ABCD1234===#{crlf}",
-        "Output line#{crlf}===EXIT_ABCD1234:0===#{crlf}Post-exit line#{crlf}"
+        "Output line#{crlf}===EXIT_ABCD1234:0===#{crlf}Post-exit line#{crlf}",
       ]
       allow(mock_socket).to receive(:readpartial) { chunks.shift || raise(EOFError) }
       expect(communicator.execute('VER')).to eq(0)
@@ -281,6 +338,29 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
       expect(b64dec[0xB2, 2]).to eq("\xEB\x14".b)
       expect(serinit.bytesize).to eq(224)
       expect(shutdown.bytesize).to eq(54)
+
+      asm_dir = File.join(scripts_dir, 'asm')
+      Dir.mktmpdir do |asm_tmp|
+        {
+          'serget_com.asm' => [248, '===SERGET_RDY==='],
+          'echo_com.asm' => [105, '%ERRORLEVEL%'],
+          'ver_com.asm' => [33, 'MS-DOS Version 1.25'],
+          'io_msdos125.asm' => [4096, 'COMMAND COM'],
+          'io_msdos20.asm' => [4096, 'COMMAND.COM'],
+        }.each do |asm_file, (expected_len, marker)|
+          out_bin = File.join(asm_tmp, "#{asm_file}.bin")
+          expect(system('nasm', '-f', 'bin', File.join(asm_dir, asm_file), '-o', out_bin)).to be(true)
+          raw_bin = File.binread(out_bin)
+          expect(raw_bin.bytesize).to eq(expected_len)
+          expect(raw_bin).to include(marker.b)
+        end
+
+        io125 = File.binread(File.join(asm_tmp, 'io_msdos125.asm.bin'))
+        # Verify INT 21h entry point at 0x0484 handles AH=35h (preserving AX) and AH=5Bh, and dispatcher handles AH=26h
+        expect(io125[0x0484, 3]).to eq("\x80\xFC\x35".b)
+        expect(io125[0x0499, 3]).to eq("\x80\xFC\x5B".b)
+        expect(io125[0x0760, 3]).to eq("\x80\xFC\x26".b)
+      end
 
       Dir.mktmpdir do |tmpdir|
         src_com = File.join(tmpdir, 'TEST.COM')

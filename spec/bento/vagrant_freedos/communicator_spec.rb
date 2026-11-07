@@ -49,7 +49,7 @@ RSpec.describe Bento::VagrantFreedos::Communicator do
         "C:#{bs}>VER",
         'FreeCom version 0.85a',
         "C:#{bs}>ECHO ===EXIT_ABCD1234:0===",
-        '===EXIT_ABCD1234:0==='
+        '===EXIT_ABCD1234:0===',
       ].join(crlf)
       allow(mock_socket).to receive(:readpartial).and_return(response)
 
@@ -59,8 +59,7 @@ RSpec.describe Bento::VagrantFreedos::Communicator do
       end
 
       expect(code).to eq(0)
-      expect(yielded).to eq([[:stdout, "FreeCom version 0.85a
-"]])
+      expect(yielded).to eq([[:stdout, "FreeCom version 0.85a\n"]])
       expect(communicator.sudo('VER')).to eq(0)
     end
 
@@ -146,6 +145,34 @@ RSpec.describe Bento::VagrantFreedos::Communicator do
     end
   end
 
+  describe '#fast_upload_file! and #resolve_exit_code' do
+    it 'raises CommunicatorError when source file does not exist' do
+      expect do
+        communicator.fast_upload_file!('/nonexistent/test.exe', "C:#{bs}TEST.EXE")
+      end.to raise_error(Bento::VagrantFreedos::CommunicatorError, /does not exist/)
+    end
+
+    it 'streams Base64 payload to SERGET.COM over the socket and detects CTest failure output' do
+      Dir.mktmpdir do |tmpdir|
+        src = File.join(tmpdir, 'test.exe')
+        File.binwrite(src, 'MZ_FREEDOS_TEST')
+
+        allow(mock_socket).to receive(:write)
+        chunks = ['wait...', "===SERGET_RDY===#{crlf}", 'writing...', "===EXIT_ABCD1234:0===#{crlf}"]
+        allow(mock_socket).to receive(:readpartial) { chunks.shift || '===EXIT_ABCD1234:0===' }
+        expect(communicator.fast_upload_file!(src, "C:#{bs}TEMP#{bs}TEST.EXE")).to be(true)
+      end
+
+      fail_chunks = ["===START_ABCD1234===#{crlf}FAIL test_suite: assertion#{crlf}===EXIT_ABCD1234:0===#{crlf}"]
+      allow(mock_socket).to receive(:readpartial) { fail_chunks.shift || raise(EOFError) }
+      expect(communicator.execute('TEST.EXE', error_check: false)).to eq(1)
+
+      unexp_chunks = ["===START_ABCD1234===#{crlf}OK#{crlf}===EXIT_ABCD1234:%ERRORLEVEL%===#{crlf}"]
+      allow(mock_socket).to receive(:readpartial) { unexp_chunks.shift || raise(EOFError) }
+      expect(communicator.execute('VER', error_check: false)).to eq(0)
+    end
+  end
+
   describe '#upload and #download' do
     it 'raises CommunicatorError when source path does not exist' do
       expect do
@@ -190,8 +217,7 @@ RSpec.describe Bento::VagrantFreedos::Communicator do
 
         dest2 = File.join(tmpdir, 'out2.txt')
         allow(communicator).to receive(:execute) do |_cmd, _opts, &blk|
-          blk.call(:stdout, "PLAIN_TEXT_OUTPUT
-")
+          blk.call(:stdout, "PLAIN_TEXT_OUTPUT\n")
           0
         end
         expect(communicator.download("D:#{bs}OUT2.TXT", dest2)).to be(true)
@@ -214,9 +240,9 @@ RSpec.describe Bento::VagrantFreedos::Communicator do
       expect(cleaned.bytes).to include(255)
       expect(cleaned).to end_with('HELLO')
       expect(reply_io.string.bytes).to eq([
-        described_class::IAC, described_class::NEG_REFUSE, 1,
-        described_class::IAC, described_class::NEG_DENY, 3
-      ])
+                                            described_class::IAC, described_class::NEG_REFUSE, 1,
+                                            described_class::IAC, described_class::NEG_DENY, 3
+                                          ])
 
       cleaned_no_sock = communicator.strip_telnet_iac(raw, nil)
       expect(cleaned_no_sock).to end_with('HELLO')
@@ -227,7 +253,7 @@ RSpec.describe Bento::VagrantFreedos::Communicator do
       allow(mock_socket).to receive(:write)
       chunks = [
         "Pre-start line#{crlf}===START_ABCD1234===#{crlf}",
-        "Output line#{crlf}===EXIT_ABCD1234:0===#{crlf}Post-exit line#{crlf}"
+        "Output line#{crlf}===EXIT_ABCD1234:0===#{crlf}Post-exit line#{crlf}",
       ]
       allow(mock_socket).to receive(:readpartial) { chunks.shift || raise(EOFError) }
       expect(communicator.execute('VER')).to eq(0)

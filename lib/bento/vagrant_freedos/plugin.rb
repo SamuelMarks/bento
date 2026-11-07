@@ -26,19 +26,19 @@ module Bento
           guest_capabilities: {
             halt: GuestCapHalt,
             change_host_name: GuestCapChangeHostName,
-            mount_shared_folder: GuestCapMountSharedFolder
+            mount_shared_folder: GuestCapMountSharedFolder,
           },
           communicators: {
             freedos: Communicator,
             freedos_serial: Communicator,
-            freedos_telnet: Communicator
+            freedos_telnet: Communicator,
           },
           synced_folders: { freedos_sync: SyncedFolder },
           commands: {
             'ssh' => CommandSsh,
             'freedos-ssh' => CommandSsh,
-            'freedos-sync' => CommandSync
-          }
+            'freedos-sync' => CommandSync,
+          },
         }
       end
 

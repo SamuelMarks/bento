@@ -21,7 +21,7 @@ module Bento
       CRLF = "#{13.chr}#{10.chr}"
 
       # @return [Array<String>] File extensions eligible for automatic LF -> CRLF conversion.
-      TEXT_EXTENSIONS = %w[.bat .cmd .c .h .cpp .hpp .asm .inc .wat .mak .lnk .cfg .pas .bas .txt .doc].freeze
+      TEXT_EXTENSIONS = %w(.bat .cmd .c .h .cpp .hpp .asm .inc .wat .mak .lnk .cfg .pas .bas .txt .doc).freeze
 
       #
       # Initializes internal Vagrant 2 synced folder plugin state.
@@ -75,7 +75,7 @@ module Bento
           next if folder_opts[:disabled]
 
           direction = folder_opts.fetch(:sync_direction, :bidirectional)
-          if %i[bidirectional to_guest].include?(direction)
+          if %i(bidirectional to_guest).include?(direction)
             sync_to_guest(machine, folder_opts[:hostpath], folder_opts)
           end
         end
@@ -95,7 +95,7 @@ module Bento
           next if folder_opts[:disabled]
 
           direction = folder_opts.fetch(:sync_direction, :bidirectional)
-          if %i[bidirectional to_guest].include?(direction)
+          if %i(bidirectional to_guest).include?(direction)
             sync_to_guest(machine, folder_opts[:hostpath], folder_opts)
           end
         end
@@ -243,7 +243,7 @@ module Bento
           next if folder_opts[:disabled]
 
           direction = folder_opts.fetch(:sync_direction, :bidirectional).to_sym
-          if %i[bidirectional to_host].include?(direction)
+          if %i(bidirectional to_host).include?(direction)
             pulled.concat(syncer.sync_to_host(machine, folder_opts[:hostpath], folder_opts))
           end
         end
@@ -351,7 +351,7 @@ module Bento
             63,           # sectors per track
             16,           # heads
             part_lba,     # hidden sectors
-            0             # total 32-bit sectors
+            0, # total 32-bit sectors
           ].pack('vCvCvvCvvvVV')
           vbr[36, 26] = [0x80, 0, 0x29, 0x1988_0400, 'BENTO_SYNC ', 'FAT16   '].pack('CCCVA11A8')
           vbr[510, 2] = "\x55\xAA".b

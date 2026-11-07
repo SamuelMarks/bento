@@ -65,7 +65,7 @@ module Bento
         vm_cfg = machine.config.vm
         comm = vm_cfg.respond_to?(:communicator) ? vm_cfg.communicator : nil
         guest = vm_cfg.respond_to?(:guest) ? vm_cfg.guest : nil
-        %i[freedos freedos_serial freedos_telnet].include?(comm) || guest == :freedos
+        %i(freedos freedos_serial freedos_telnet).include?(comm) || guest == :freedos
       end
 
       #
@@ -212,7 +212,7 @@ module Bento
           active_list = @env.active_machines
           target_sym = target_name&.to_sym
           chosen = (target_sym && active_list.find { |n, _p| n == target_sym }) || active_list.first
-          return @env.machine(chosen[0], chosen[1]) if chosen
+          return @env.machine(chosen.first, chosen[1]) if chosen
         end
 
         cfg = Config.new
@@ -268,18 +268,17 @@ module Bento
             stdout.flush
           end
 
-          if ready_ios.include?(stdin)
-            break if stdin.eof?
+          next unless ready_ios.include?(stdin)
+          break if stdin.eof?
 
-            input = stdin.readpartial(1024)
-            break if input.bytes.include?(CTRL_RIGHT_BRACKET)
+          input = stdin.readpartial(1024)
+          break if input.bytes.include?(CTRL_RIGHT_BRACKET)
 
-            translated = input.gsub(CRLF, LF).gsub(LF, CRLF)
-            sock.write(translated)
-            sock.flush
-          end
+          translated = input.gsub(CRLF, LF).gsub(LF, CRLF)
+          sock.write(translated)
+          sock.flush
         end
-      rescue EOFError, IOError
+      rescue IOError
         nil
       end
     end

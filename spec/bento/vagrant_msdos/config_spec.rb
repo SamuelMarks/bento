@@ -29,6 +29,11 @@ RSpec.describe Bento::VagrantMsdos::Config do
       expect(merged.host).to eq('127.0.0.2')
       expect(merged.port).to eq(2326)
       expect(merged.dos_version).to eq(described_class::UNSET_VALUE)
+
+      dummy_root = Struct.new(:msdos).new(described_class.new)
+      configured = described_class.configure_machine(dummy_root, dos_version: '1.25', port: 2312, ignored: true)
+      expect(configured.dos_version).to eq('1.25')
+      expect(configured.port).to eq(2312)
     end
   end
 
@@ -233,7 +238,7 @@ RSpec.describe Bento::VagrantMsdos::Plugin do
       # Test top-level load when Vagrant constant is defined
       Object.const_set(:Vagrant, minimal_vagrant)
       begin
-        load File.expand_path('../../../../lib/bento/vagrant_msdos.rb', __FILE__)
+        load File.expand_path('../../../lib/bento/vagrant_msdos.rb', __dir__)
       ensure
         Object.send(:remove_const, :Vagrant)
       end

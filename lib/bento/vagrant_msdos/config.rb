@@ -12,7 +12,7 @@ module Bento
       # @return [String] Backslash character.
       BS = 92.chr
       # @return [Array<String>] Supported Microsoft MS-DOS release versions.
-      SUPPORTED_VERSIONS = %w[1.25 2.0 4.0].freeze
+      SUPPORTED_VERSIONS = %w(1.25 2.0 4.0).freeze
 
       # @return [String, Symbol] Hostname or IP address of the Telnet serial bridge.
       attr_accessor :host
@@ -44,8 +44,26 @@ module Bento
       # @return [String, Symbol] Default working directory inside MS-DOS.
       attr_accessor :work_dir
 
-      # @return [String, Symbol] Target MS-DOS version (`'1.25'`, `'2.0'`, or `'4.0'`).
+      # @return [String] Selected MS-DOS version (`"1.25"`, `"2.0"`, or `"4.0"`).
       attr_accessor :dos_version
+
+      #
+      # Applies a hash of MS-DOS configuration attributes onto a Vagrant root or
+      # sub-machine config object (`target_config.msdos`), bypassing `DummyConfig#respond_to?`
+      # limitations in multi-VM `Vagrantfile` definitions.
+      #
+      # @param [Object] target_config Vagrant configuration object (`config` or sub-machine `node`).
+      # @param [Hash] options Key-value pairs of MS-DOS config attributes (`:dos_version`, `:port`, etc.).
+      # @return [Object] The configured `target_config.msdos` instance.
+      #
+      def self.configure_machine(target_config, options = {})
+        msdos_cfg = target_config.msdos
+        options.each do |key, value|
+          setter = :"#{key}="
+          msdos_cfg.public_send(setter, value) if msdos_cfg.respond_to?(setter)
+        end
+        msdos_cfg
+      end
 
       #
       # Initializes a new Config instance with all attributes set to UNSET_VALUE.
@@ -147,7 +165,7 @@ module Bento
       #
       def validate(_machine)
         errors = []
-        unless %i[telnet unix_socket].include?(@transport)
+        unless %i(telnet unix_socket).include?(@transport)
           errors << "Invalid transport #{@transport.inspect}; must be :telnet or :unix_socket."
         end
         if @transport == :telnet && (!@port.is_a?(Integer) || @port <= 0 || @port > 65_535)

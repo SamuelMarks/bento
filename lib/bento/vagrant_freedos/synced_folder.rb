@@ -21,7 +21,7 @@ module Bento
       CRLF = "#{13.chr}#{10.chr}"
 
       # @return [Array<String>] File extensions eligible for automatic LF -> CRLF conversion.
-      TEXT_EXTENSIONS = %w[.bat .cmd .c .h .cpp .hpp .asm .inc .wat .mak .lnk .cfg .txt].freeze
+      TEXT_EXTENSIONS = %w(.bat .cmd .c .h .cpp .hpp .asm .inc .wat .mak .lnk .cfg .txt).freeze
 
       #
       # Initializes internal Vagrant 2 synced folder plugin state.
@@ -75,7 +75,7 @@ module Bento
           next if folder_opts[:disabled]
 
           direction = folder_opts.fetch(:sync_direction, :bidirectional)
-          if %i[bidirectional to_guest].include?(direction)
+          if %i(bidirectional to_guest).include?(direction)
             sync_to_guest(machine, folder_opts[:hostpath], folder_opts)
           end
         end
@@ -95,7 +95,7 @@ module Bento
           next if folder_opts[:disabled]
 
           direction = folder_opts.fetch(:sync_direction, :bidirectional)
-          if %i[bidirectional to_guest].include?(direction)
+          if %i(bidirectional to_guest).include?(direction)
             sync_to_guest(machine, folder_opts[:hostpath], folder_opts)
           end
         end
@@ -223,7 +223,7 @@ module Bento
           next if folder_opts[:disabled]
 
           direction = folder_opts.fetch(:sync_direction, :bidirectional).to_sym
-          if %i[bidirectional to_host].include?(direction)
+          if %i(bidirectional to_host).include?(direction)
             pulled.concat(syncer.sync_to_host(machine, folder_opts[:hostpath], folder_opts))
           end
         end

@@ -71,16 +71,14 @@ RSpec.describe Bento::VagrantMsdos::CommandSsh do
         mach = double('machine', config: config, communicate: communicator, data_dir: tmpdir)
         out = StringIO.new
         allow(communicator).to receive(:execute).with('VER', error_check: false) do |_c, _o, &blk|
-          blk.call(:stdout, "MS-DOS Version 4.00
-")
+          blk.call(:stdout, "MS-DOS Version 4.00\n")
           0
         end
 
         allow(communicator).to receive(:close_socket)
         handler = described_class.new(['-c', 'VER'])
         expect(handler.execute_for_machine(mach, stdout: out)).to eq(0)
-        expect(out.string).to eq("MS-DOS Version 4.00
-")
+        expect(out.string).to eq("MS-DOS Version 4.00\n")
       end
     end
 
@@ -109,8 +107,7 @@ RSpec.describe Bento::VagrantMsdos::CommandSsh do
       client_sock, server_sock = UNIXSocket.pair
       server_sock.write('C:\>')
       in_r, in_w = IO.pipe
-      in_w.write("DIR
-")
+      in_w.write("DIR\n")
       in_w.close
 
       out = StringIO.new

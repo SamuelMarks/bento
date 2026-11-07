@@ -54,12 +54,12 @@ RSpec.describe Bento::VagrantMsdos::SyncedFolder do
             sync_direction: :bidirectional,
             crlf_convert: true,
             live_push: true,
-            exclude: ['.git/']
+            exclude: ['.git/'],
           },
           '/disabled' => {
             hostpath: host_dir,
-            disabled: true
-          }
+            disabled: true,
+          },
         }
 
         uploaded = []
@@ -147,7 +147,7 @@ RSpec.describe Bento::VagrantMsdos::SyncedFolder do
         to_host_folders = {
           '/host_only' => { hostpath: m_ws, sync_direction: :to_host },
           '/guest_only' => { hostpath: m_ws, sync_direction: :to_guest },
-          '/dis' => { hostpath: m_ws, disabled: true }
+          '/dis' => { hostpath: m_ws, disabled: true },
         }
         synced_folder.prepare(m, to_host_folders)
         synced_folder.prepare(m, to_host_folders)

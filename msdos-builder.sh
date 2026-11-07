@@ -73,7 +73,7 @@ log_error() {
 #
 # @function usage
 # @description Displays CLI usage information and available subcommands.
-# @noargs
+# @param [void] None.
 # @return [void]
 #
 usage() {
@@ -103,7 +103,7 @@ EOF
 #
 # @function resolve_qemu_binary
 # @description Resolves the QEMU system binary for running 16-bit x86 MS-DOS.
-# @noargs
+# @param [void] None.
 # @return [String] Prints the resolved QEMU executable name.
 #
 resolve_qemu_binary() {
@@ -120,7 +120,7 @@ resolve_qemu_binary() {
 #
 # @function resolve_qemu_accel
 # @description Determines the appropriate QEMU accelerator for the current host CPU/OS.
-# @noargs
+# @param [void] None.
 # @return [String] Prints accelerator string (tcg, hvf:tcg, or kvm:tcg).
 #
 resolve_qemu_accel() {
@@ -138,7 +138,7 @@ resolve_qemu_accel() {
 # @description
 #   Downloads and extracts https://github.com/microsoft/ms-dos into
 #   builds/iso/microsoft-ms-dos.tar.gz and builds/msdos_upstream.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_fetch() {
@@ -329,7 +329,7 @@ inject_msdos_into_image() {
             fi
           fi
         done
-        for _com in SERINIT.COM SHUTDOWN.COM B64DEC.COM B64ENC.COM; do
+        for _com in SERINIT.COM SHUTDOWN.COM B64DEC.COM B64ENC.COM SERGET.COM; do
           cp -f "${SCRIPT_DIR}/packer_templates/scripts/msdos/${_com}" "${_mnt}/${_com}"
         done
         write_version_config_and_autoexec "$_mnt" "1.25"
@@ -362,7 +362,7 @@ inject_msdos_into_image() {
         cp -f "${_mnt}/BENTO/VAGAGENT.BAT" "${_mnt}/VAGAGENT.BAT"
         cp -f "${_mnt}/BENTO/RUNCMD.BAT" "${_mnt}/RUNCMD.BAT"
 
-        for _com in SERINIT.COM SHUTDOWN.COM B64DEC.COM B64ENC.COM; do
+        for _com in SERINIT.COM SHUTDOWN.COM B64DEC.COM B64ENC.COM SERGET.COM; do
           cp -f "${SCRIPT_DIR}/packer_templates/scripts/msdos/${_com}" "${_mnt}/BENTO/${_com}"
           cp -f "${SCRIPT_DIR}/packer_templates/scripts/msdos/${_com}" "${_mnt}/${_com}"
         done
@@ -470,7 +470,7 @@ EOF
 # @description
 #   Packages the bootable MS-DOS disk image into Vagrant .box archives for
 #   qemu, libvirt, and utm across both aarch64 and x86_64.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_box() {
@@ -524,7 +524,7 @@ register_box_in_vagrant_dir() {
 # @description
 #   Registers the built MS-DOS Vagrant boxes (`bento/msdos` and
 #   `bento/msdos-<version>`) in Vagrant so they appear in `vagrant box list`.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_register() {
@@ -554,7 +554,7 @@ cmd_register() {
 #
 # @function cmd_all
 # @description Runs fetch, build, box packaging, and Vagrant registration end-to-end.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_all() {
@@ -570,7 +570,7 @@ cmd_all() {
 # @description
 #   Ensures SYNC_DISK (`msdos_sync_d.raw`) is formatted as a partitioned MBR + FAT16
 #   fixed disk image so MS-DOS `IO.SYS` mounts it as drive `D:`.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 ensure_partitioned_sync_disk() {
@@ -589,7 +589,7 @@ ensure_partitioned_sync_disk() {
 #
 # @function cmd_run
 # @description Boots the standalone MS-DOS VM via QEMU with Telnet serial and D: sync disk.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_run() {
@@ -749,7 +749,7 @@ cmd_snapshot() {
 #
 # @function cmd_status
 # @description Displays current status of MS-DOS artifacts, sockets, and boxes.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_status() {
@@ -766,7 +766,7 @@ cmd_status() {
 #
 # @function cmd_clean
 # @description Cleans up temporary sockets and background QEMU processes for MS-DOS.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 cmd_clean() {

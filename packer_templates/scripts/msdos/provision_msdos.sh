@@ -4,7 +4,7 @@
 # @brief Host-side Packer provisioner script for standalone Microsoft MS-DOS (1.25, 2.0, 4.0) images
 # @description
 #   Generates 16-bit 8086 real-mode .COM utilities (B64DEC.COM, B64ENC.COM,
-#   SERINIT.COM, and SHUTDOWN.COM) in the MS-DOS scripts directory, connects
+#   SERINIT.COM, SERGET.COM, and SHUTDOWN.COM) in the MS-DOS scripts directory, connects
 #   to the MS-DOS guest over the QEMU/UTM/VirtualBox Telnet or Unix serial
 #   socket (COM1) when reachable, verifies `VER` output, provisions C:\BENTO,
 #   and cleanly powers off the guest via SHUTDOWN.COM.
@@ -73,6 +73,10 @@ generate_msdos_tools() {
   # - VirtualBox ACPI poweroff:   mov dx, 0x4004; mov ax, 0x3400; out dx, ax
   # - Clean exit fallback:        mov ax, 0x4C00; int 21h
   printf '\270\001\123\061\333\315\025\270\016\123\061\333\271\002\001\315\025\270\007\123\273\001\000\271\003\000\315\025\272\004\006\270\000\040\357\272\004\260\270\000\040\357\272\004\100\270\000\064\357\270\000\114\315\041' > "${_out_dir}/SHUTDOWN.COM"
+
+  # 16-bit 8086 real-mode SERGET.COM (248 bytes):
+  # - Reads raw Base64 stream directly from COM1 UART (0x3F8) until "!", decoding in 512-byte buffered blocks to <OUTFILE>
+  printf '\276\201\000\254\074\040\164\373\163\003\351\321\000\116\211\362\254\074\040\167\373\306\104\377\000\061\311\264\074\315\041\163\003\351\272\000\211\303\276\343\001\254\010\300\164\022\210\304\272\375\003\354\250\040\164\373\272\370\003\210\340\356\353\351\061\366\306\006\370\001\000\061\377\272\375\003\354\250\001\164\373\272\370\003\354\074\041\164\157\074\075\164\354\074\101\162\024\074\132\167\004\054\101\353\046\074\141\162\334\074\172\167\330\054\107\353\032\074\060\162\010\074\071\167\314\054\374\353\016\074\053\165\004\260\076\353\006\074\057\165\274\260\077\060\344\261\006\323\346\011\306\200\006\370\001\006\200\076\370\001\010\162\246\200\056\370\001\010\212\016\370\001\211\360\323\350\210\205\371\001\107\201\377\000\002\162\216\211\371\272\371\001\264\100\315\041\061\377\353\201\011\377\164\011\211\371\272\371\001\264\100\315\041\264\076\315\041\270\000\114\315\041\270\001\114\315\041\015\012\075\075\075\123\105\122\107\105\124\137\122\104\131\075\075\075\015\012\000' > "${_out_dir}/SERGET.COM"
   return 0
 }
 
@@ -84,7 +88,7 @@ generate_msdos_tools() {
 #   ready, runs `VER` and verifies the output matches `MS-DOS`, and then
 #   executes `C:\BENTO\SHUTDOWN.COM` (or `C:\SHUTDOWN.COM`) to cleanly
 #   power off the Packer VM.
-# @noargs
+# @param [void] None.
 # @return [Integer] Returns 0 on success.
 #
 provision_live_msdos_vm() {

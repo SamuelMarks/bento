@@ -178,6 +178,23 @@ Hyper-V Gen 2 VMs do not support floppy drives. If you previously provided resou
 
 - `autounattend.xml`: The Gen 2 `autounattend.xml` file supports EFI partitions. Update the `autounattend.xml` with the correct Windows version for your systems and ensure that the partitions are correct for your situation. You also need to manage the driver disk that holds the hyper-v guest services drivers and adjust the `autounattend.xml` file as appropriate.
 
+### Microsoft MS-DOS (`1.25`, `2.0`, `4.00`) & FreeDOS (`1.3`) Support
+
+Bento includes standalone builders (`./msdos-builder.sh` / `msdos-builder.cmd` and `./freedos-builder.sh` / `freedos-builder.cmd`), tracked 16-bit 8086 NASM assembly sources (`packer_templates/scripts/msdos/asm/`), and Vagrant plugins (`Bento::VagrantMsdos` and `Bento::VagrantFreedos`) for building and running **Microsoft MS-DOS 1.25, 2.0, 4.00** (from [`microsoft/ms-dos`](https://github.com/microsoft/ms-dos)) and **FreeDOS 1.3** across both `aarch64` and `x86_64` hosts:
+
+- **16-Bit 8086 Serial Guest Agent (`packer_templates/scripts/msdos/asm/`)**:
+  - `SERINIT.COM` (224 bytes): Programs the 16550A `COM1` UART (`0x3F8`) to `115200,N,8,1`, installs a resident hardware-polling `INT 14h` handler at `0000:0200h` (asserting `DCD|DSR|CTS`), and applies FreeDOS 1.3 serial polling patches when running under FreeDOS.
+  - `SERGET.COM` (248 bytes): High-speed direct `0x3F8` UART Base64 stream receiver (`===SERGET_RDY===` handshake + `!` terminator) used by `Communicator#fast_upload_file!` (~0.3s binary transfers).
+  - `B64ENC.COM` (460 bytes) & `B64DEC.COM` (459 bytes): 16-bit Base64 file encoder/decoder for `Communicator#upload` and `Communicator#download`.
+  - `ECHO.COM` (105 bytes) & `VER.COM` (33 bytes): Provide `ECHO` with dynamic `%ERRORLEVEL%` expansion (`INT 21h AH=4Dh`) and `VER` for MS-DOS 1.25.
+  - `SHUTDOWN.COM` (54 bytes): APM 1.2 + QEMU/Bochs/VirtualBox ACPI poweroff utility (`0x0604`, `0xB004`, `0x4004`).
+- **MS-DOS 1.25 `IO.SYS` (`io_msdos125.asm`, 4,096 bytes) & MZ Header Alignment**:
+  - Translates in-memory 12-bit FAT (`MSDOS.SYS`) to/from 16-bit FAT (`0x80` `C:` and `0x81` `D:` partitioned hard disks at LBA 63) on the fly.
+  - Provides a resident DOS 2.0/3.0+ `INT 21h` syscall shim (`AH=26h` Create PSP preserving caller `CS` and clearing `PSP:[002Ch]`, `AH=30h`, `31h`, `35h`, `3Ch`..`44h`, `47h`..`4Ah`, `4Ch`, `4Dh`, `56h`, `5Bh`, `63h`, `66h`, `68h`) bridging file handles `BX=5..8` to 86-DOS FCBs so 16-bit OpenWatcom v2 C executables run natively on MS-DOS 1.25.
+  - `Bento::VagrantMsdos::Communicator#align_mz_header_for_dos125` automatically aligns uploaded `.EXE` headers to 32 paragraphs (512 bytes) for MS-DOS 1.25 `COMMAND.COM` (`EXELOAD`).
+- **OpenWatcom v2 CMake + CTest Cross-Compilation**:
+  - Cross-compile 16-bit DOS `.EXE` targets with OpenWatcom v2 (`wcl -bt=dos -ml -0`) via CMake and stream/execute CTest suites across `bento/msdos-1.25`, `bento/msdos-2.0`, `bento/msdos-4.0`, and `bento/freedos` using `Communicator#fast_upload_file!` and `Communicator#execute`. See [MSDOS.md](./MSDOS.md) and [FREEDOS.md](./FREEDOS.md) for full details.
+
 ### Bugs and Issues
 
 Please use GitHub issues to report bugs, features, or other problems.

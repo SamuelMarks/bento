@@ -26,19 +26,19 @@ module Bento
           guest_capabilities: {
             halt: GuestCapHalt,
             change_host_name: GuestCapChangeHostName,
-            mount_shared_folder: GuestCapMountSharedFolder
+            mount_shared_folder: GuestCapMountSharedFolder,
           },
           communicators: {
             msdos: Communicator,
             msdos_serial: Communicator,
-            msdos_telnet: Communicator
+            msdos_telnet: Communicator,
           },
           synced_folders: { msdos_sync: SyncedFolder },
           commands: {
             'ssh' => CommandSsh,
             'msdos-ssh' => CommandSsh,
-            'msdos-sync' => CommandSync
-          }
+            'msdos-sync' => CommandSync,
+          },
         }
       end
 

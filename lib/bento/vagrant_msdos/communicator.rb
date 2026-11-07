@@ -38,7 +38,7 @@ module Bento
       CRLF = "#{13.chr}#{10.chr}"
 
       # @return [Regexp] Pattern matching classic MS-DOS 1.25/2.0/4.0 command failure messages.
-      DOS_ERROR_OUTPUT_REGEX = /Bad command or file name|Syntax error|File not found|Invalid directory/i
+      DOS_ERROR_OUTPUT_REGEX = /Bad command or file name|Syntax error|File not found|Invalid directory|\AFAIL\s+[A-Za-z_]|Assertion failed|Program too big to fit in memory/i.freeze
 
       # @return [Object] The Vagrant machine instance associated with this communicator.
       attr_reader :machine
@@ -73,12 +73,11 @@ module Bento
         if @machine.respond_to?(:config) && @machine.config.respond_to?(:msdos)
           cfg = @machine.config.msdos
           cfg.finalize! if cfg.respond_to?(:finalize!) && cfg.host == Config::UNSET_VALUE
-          cfg
         else
           cfg = Config.new
           cfg.finalize!
-          cfg
         end
+        cfg
       end
 
       #
@@ -229,6 +228,100 @@ module Bento
       end
 
       #
+      # Aligns an MZ `.EXE` header to a multiple of 32 paragraphs (512 bytes) and
+      # strips trailing non-loadable debug symbols when targeting MS-DOS 1.25.
+      # MS-DOS 1.25 `COMMAND.COM` (`EXELOAD`) rounds `HEADSIZ` up to 512-byte pages
+      # (`(HEADSIZ + 31) >> 5`); padding `e_cparhdr` to 32 paragraphs ensures any
+      # 16-bit DOS `.EXE` from any compiler/linker executes cleanly on MS-DOS 1.25.
+      #
+      # @param [String] raw_bytes Raw file content bytes.
+      # @return [String] Aligned MZ binary bytes (when targeting MS-DOS 1.25) or original bytes.
+      #
+      def align_mz_header_for_dos125(raw_bytes)
+        bin = raw_bytes.to_s.b
+        return bin unless msdos_config.dos_version.to_s == '1.25'
+        return bin unless bin.bytesize >= 28 && bin.start_with?('MZ'.b)
+
+        e_cblp    = bin[2, 2].unpack1('v')
+        e_cp      = bin[4, 2].unpack1('v')
+        e_cparhdr = bin[8, 2].unpack1('v')
+
+        if e_cp.positive?
+          load_limit = e_cblp.zero? ? (e_cp * 512) : (((e_cp - 1) * 512) + e_cblp)
+          bin = bin[0, load_limit] if load_limit.positive? && load_limit < bin.bytesize
+        end
+
+        rem = e_cparhdr % 32
+        return bin if rem.zero?
+
+        old_hdr_bytes = e_cparhdr * 16
+        return bin if old_hdr_bytes > bin.bytesize
+
+        pad_paras     = 32 - rem
+        pad_bytes     = pad_paras * 16
+        new_hdr_paras = e_cparhdr + pad_paras
+        new_bin       = bin[0, old_hdr_bytes] + ("\x00".b * pad_bytes) + bin[old_hdr_bytes..]
+        new_total     = new_bin.bytesize
+        new_cp        = (new_total + 511) / 512
+        new_cblp      = new_total % 512
+
+        new_bin[2, 2] = [new_cblp].pack('v')
+        new_bin[4, 2] = [new_cp].pack('v')
+        new_bin[8, 2] = [new_hdr_paras].pack('v')
+        new_bin
+      end
+
+      #
+      # Streams a file from the host directly to `to` on the MS-DOS guest using `SERGET.COM`
+      # over the COM1 serial/telnet connection (~0.3s per binary).
+      #
+      # @param [String] from Host source file path.
+      # @param [String] to Guest destination DOS path.
+      # @return [Boolean] True on successful transfer.
+      # @raise [CommunicatorError] If the source file does not exist on the host.
+      #
+      def fast_upload_file!(from, to)
+        raise CommunicatorError, "Host source path does not exist: #{from}" unless File.exist?(from)
+
+        dos_dest    = normalize_dos_path(to)
+        payload_bin = align_mz_header_for_dos125(File.binread(from))
+        encoded     = "#{Base64.strict_encode64(payload_bin)}!"
+        has_subdirs = msdos_config.supports_subdirectories?
+        is_v4       = msdos_config.dos_version.to_s.start_with?('4')
+        serget_cmd  = is_v4 ? "C:#{BS}BENTO#{BS}SERGET.COM" : 'SERGET.COM'
+        req_id      = SecureRandom.hex(4).upcase
+        exit_prefix = "===EXIT_#{req_id}:"
+        sock        = open_socket
+
+        if has_subdirs && is_v4
+          sock.write("C:#{BS}BENTO#{BS}RUNCMD.BAT #{req_id} #{serget_cmd} #{dos_dest}#{CRLF}")
+        else
+          sock.write("#{serget_cmd} #{dos_dest}#{CRLF}")
+        end
+        sock.flush
+
+        buf = +''
+        loop do
+          buf << strip_telnet_iac(sock.readpartial(4096), sock)
+          break if buf.include?('===SERGET_RDY===')
+        end
+
+        sock.write(encoded)
+        sock.flush
+
+        unless has_subdirs && is_v4
+          sock.write("ECHO #{exit_prefix}%ERRORLEVEL%===#{CRLF}")
+          sock.flush
+        end
+
+        loop do
+          buf << strip_telnet_iac(sock.readpartial(4096), sock)
+          break if buf.match?(/(?:\A|[\r\n])#{Regexp.escape(exit_prefix)}/)
+        end
+        true
+      end
+
+      #
       # Strips Telnet IAC (0xFF) negotiation sequences from a raw byte buffer and replies NEG_REFUSE/NEG_DENY.
       #
       # @param [String] data Raw byte string received from socket.
@@ -335,18 +428,17 @@ module Bento
       #
       def read_framed_response(sock, start_marker, exit_prefix, timeout_sec, command = '')
         buffer = +''
-        exit_regex = Regexp.new("#{Regexp.escape(exit_prefix)}([0-9]+|%ERRORLEVEL%|)===")
+        exit_regex = /(?:\A|[\r\n])#{Regexp.escape(exit_prefix)}([0-9]+|%ERRORLEVEL%|)===/
         Timeout.timeout(timeout_sec, CommunicatorError, "Timed out waiting for MS-DOS response (#{timeout_sec}s)") do
           loop do
             chunk = sock.readpartial(4096)
             buffer << strip_telnet_iac(chunk, sock)
             exit_match = buffer.match(exit_regex)
-            if exit_match
-              raw_code = exit_match[1]
-              lines = extract_between_markers(buffer, start_marker, exit_prefix, command)
-              exit_code = resolve_exit_code(raw_code, lines)
-              return [lines, exit_code]
-            end
+            next unless exit_match
+            raw_code = exit_match[1]
+            lines = extract_between_markers(buffer, start_marker, exit_prefix, command)
+            exit_code = resolve_exit_code(raw_code, lines)
+            return [lines, exit_code]
           end
         end
       rescue EOFError
@@ -362,9 +454,10 @@ module Bento
       # @return [Integer] Resolved DOS exit status.
       #
       def resolve_exit_code(raw_code, lines)
+        return 1 if lines.any? { |line| line.match?(DOS_ERROR_OUTPUT_REGEX) }
         return raw_code.to_i if raw_code.match?(/\A[0-9]+\z/)
 
-        lines.any? { |line| line.match?(DOS_ERROR_OUTPUT_REGEX) } ? 1 : 0
+        0
       end
 
       #
@@ -387,7 +480,7 @@ module Bento
         lines.each do |line|
           next if line.include?("ECHO #{start_marker}") || line.include?("ECHO #{exit_prefix}")
 
-          if !started
+          unless started
             started = true if line.include?(start_marker)
             next
           end
@@ -411,7 +504,7 @@ module Bento
       #
       def upload_file(from, to)
         dos_dest = normalize_dos_path(to)
-        content = File.binread(from)
+        content = align_mz_header_for_dos125(File.binread(from))
         encoded = Base64.strict_encode64(content)
         has_subdirs = msdos_config.supports_subdirectories?
         tmp_b64 = has_subdirs ? "C:#{BS}TEMP#{BS}VAGUP.B64" : "C:#{BS}VAGUP.B64"

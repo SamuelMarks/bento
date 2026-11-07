@@ -36,6 +36,9 @@ module Bento
       # @return [String] DOS CRLF line ending.
       CRLF = "#{13.chr}#{10.chr}"
 
+      # @return [Regexp] Pattern matching DOS and CTest/greatest test failure signatures.
+      DOS_ERROR_OUTPUT_REGEX = /Bad command or file name|Syntax error|File not found|Invalid directory|\AFAIL\s+[A-Za-z_]|Assertion failed|Program too big to fit in memory/i.freeze
+
       # @return [Object] The Vagrant machine instance associated with this communicator.
       attr_reader :machine
 
@@ -69,12 +72,11 @@ module Bento
         if @machine.respond_to?(:config) && @machine.config.respond_to?(:freedos)
           cfg = @machine.config.freedos
           cfg.finalize! if cfg.respond_to?(:finalize!) && cfg.host == Config::UNSET_VALUE
-          cfg
         else
           cfg = Config.new
           cfg.finalize!
-          cfg
         end
+        cfg
       end
 
       #
@@ -224,6 +226,44 @@ module Bento
       end
 
       #
+      # Streams a file from the host directly to `to` on the FreeDOS guest using `SERGET.COM`
+      # over the COM1 serial/telnet connection (~0.3s per binary).
+      #
+      # @param [String] from Host source file path.
+      # @param [String] to Guest destination DOS path.
+      # @return [Boolean] True on successful transfer.
+      # @raise [CommunicatorError] If the source file does not exist on the host.
+      #
+      def fast_upload_file!(from, to)
+        raise CommunicatorError, "Host source path does not exist: #{from}" unless File.exist?(from)
+
+        dos_dest    = normalize_dos_path(to)
+        encoded     = "#{Base64.strict_encode64(File.binread(from))}!"
+        serget_cmd  = "C:#{BS}BENTO#{BS}SERGET.COM"
+        req_id      = SecureRandom.hex(4).upcase
+        exit_prefix = "===EXIT_#{req_id}:"
+        sock        = open_socket
+
+        sock.write("C:#{BS}BENTO#{BS}RUNCMD.BAT #{req_id} #{serget_cmd} #{dos_dest}#{CRLF}")
+        sock.flush
+
+        buf = +''
+        loop do
+          buf << strip_telnet_iac(sock.readpartial(4096), sock)
+          break if buf.include?('===SERGET_RDY===')
+        end
+
+        sock.write(encoded)
+        sock.flush
+
+        loop do
+          buf << strip_telnet_iac(sock.readpartial(4096), sock)
+          break if buf.match?(/(?:\A|[\r\n])#{Regexp.escape(exit_prefix)}/)
+        end
+        true
+      end
+
+      #
       # Strips Telnet IAC (0xFF) negotiation sequences from a raw byte buffer and replies NEG_REFUSE/NEG_DENY.
       #
       # @param [String] data Raw byte string received from socket.
@@ -322,21 +362,36 @@ module Bento
       #
       def read_framed_response(sock, start_marker, exit_prefix, timeout_sec, command = '')
         buffer = +''
-        exit_regex = Regexp.new("#{Regexp.escape(exit_prefix)}([0-9]+)===")
+        exit_regex = /(?:\A|[\r\n])#{Regexp.escape(exit_prefix)}([0-9]+|%ERRORLEVEL%|)===/
         Timeout.timeout(timeout_sec, CommunicatorError, "Timed out waiting for FreeDOS response (#{timeout_sec}s)") do
           loop do
             chunk = sock.readpartial(4096)
             buffer << strip_telnet_iac(chunk, sock)
             exit_match = buffer.match(exit_regex)
-            if exit_match
-              exit_code = exit_match[1].to_i
-              lines = extract_between_markers(buffer, start_marker, exit_prefix, command)
-              return [lines, exit_code]
-            end
+            next unless exit_match
+            raw_code = exit_match[1]
+            lines = extract_between_markers(buffer, start_marker, exit_prefix, command)
+            exit_code = resolve_exit_code(raw_code, lines)
+            return [lines, exit_code]
           end
         end
       rescue EOFError
         raise CommunicatorError, 'Connection closed by FreeDOS serial/telnet bridge before command completed.'
+      end
+
+      #
+      # Resolves the integer exit code from either an expanded numeric `%ERRORLEVEL%`
+      # or fallback inspection of DOS / CTest error output lines.
+      #
+      # @param [String] raw_code Captured code string from the exit sentinel.
+      # @param [Array<String>] lines Captured output lines from the command.
+      # @return [Integer] Resolved DOS exit status.
+      #
+      def resolve_exit_code(raw_code, lines)
+        return 1 if lines.any? { |line| line.match?(DOS_ERROR_OUTPUT_REGEX) }
+        return raw_code.to_i if raw_code.match?(/\A[0-9]+\z/)
+
+        0
       end
 
       #
@@ -359,7 +414,7 @@ module Bento
         lines.each do |line|
           next if line.include?("ECHO #{start_marker}") || line.include?("ECHO #{exit_prefix}")
 
-          if !started
+          unless started
             started = true if line.include?(start_marker)
             next
           end

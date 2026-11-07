@@ -62,16 +62,16 @@ module Bento
           drive: 'D:',
           live_push: opts[:live],
           live_pull: opts[:live],
-          crlf_convert: opts[:crlf]
+          crlf_convert: opts[:crlf],
         }
 
         iterations = opts[:watch] ? opts[:iterations] : 1
         iterations.times do |idx|
-          if %i[bidirectional to_guest].include?(opts[:direction])
+          if %i(bidirectional to_guest).include?(opts[:direction])
             pushed = syncer.sync_to_guest(machine, host_dir, sync_opts)
             stdout.puts("Synced #{pushed.size} file(s) to FreeDOS guest.")
           end
-          if %i[bidirectional to_host].include?(opts[:direction])
+          if %i(bidirectional to_host).include?(opts[:direction])
             pulled = syncer.sync_to_host(machine, host_dir, sync_opts)
             stdout.puts("Synced #{pulled.size} file(s) from FreeDOS guest to host.")
           end
@@ -94,7 +94,7 @@ module Bento
           crlf: false,
           iterations: 1,
           interval: 0.05,
-          target: nil
+          target: nil,
         }
         args.each do |arg|
           case arg
@@ -128,7 +128,7 @@ module Bento
           active_list = @env.active_machines
           target_sym = target_name&.to_sym
           chosen = (target_sym && active_list.find { |n, _p| n == target_sym }) || active_list.first
-          return @env.machine(chosen[0], chosen[1]) if chosen
+          return @env.machine(chosen.first, chosen[1]) if chosen
         end
 
         Struct.new(:data_dir).new(nil)
