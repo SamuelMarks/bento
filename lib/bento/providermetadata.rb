@@ -155,13 +155,11 @@ class ProviderMetadata
   # @return [String] Libvirtd version string.
   #
   def ver_libvirt
-    begin
-      cmd = Mixlib::ShellOut.new('libvirtd -V')
-      cmd.run_command
-      cmd.stdout.split(' ').last
-    rescue Errno::ENOENT
-      ver_qemu
-    end
+    cmd = Mixlib::ShellOut.new('libvirtd -V')
+    cmd.run_command
+    cmd.stdout.split(' ').last
+  rescue Errno::ENOENT
+    ver_qemu
   end
 
   #

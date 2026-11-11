@@ -317,6 +317,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
         ["modifyvm", "{{.Name}}", "--mouse", "usb"],
         ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
         ["modifyvm", "{{.Name}}", "--nic-type1", "usbnet"],
+        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
         ] : [
         ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
         ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
@@ -326,6 +327,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
         ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
         ["modifyvm", "{{.Name}}", "--uart1", "0x3f8", "4"],
         ["modifyvm", "{{.Name}}", "--uartmode1", local.host_os == "windows" ? "file" : "server", local.host_os == "windows" ? "${path.root}/../serial.log" : "/tmp/windows-11-serial.sock"],
+        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
       ]
       ) : (
       var.os_arch == "aarch64" ? [
@@ -337,7 +339,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
         ["modifyvm", "{{.Name}}", "--graphicscontroller", "qemuramfb"],
         ["modifyvm", "{{.Name}}", "--mouse", "usb"],
         ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["storagectl", "{{.Name}}", "--name", "IDE Controller", "--remove"],
+        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
         ] : [
         ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
         ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
@@ -345,7 +347,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
         ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
         ["modifyvm", "{{.Name}}", "--mouse", "usb"],
         ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["storagectl", "{{.Name}}", "--name", "IDE Controller", "--remove"],
+        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
       ]
     )
   ) : var.vboxmanage
