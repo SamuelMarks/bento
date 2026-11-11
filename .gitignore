@@ -23,6 +23,7 @@ Berksfile.lock
 kitchen.yml
 *.metadata.json
 bento-*.gem
+.yardoc/
 .env
 .env.*
 !.env.template

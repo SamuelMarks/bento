@@ -1,7 +1,7 @@
 locals {
   # helper locals
   build_dir = abspath("${path.root}/../builds/")
-  host_os   = var.host_os != null && var.host_os != "" ? var.host_os : (
+  host_os = var.host_os != null && var.host_os != "" ? var.host_os : (
     fileexists("/System/Library/CoreServices/SystemVersion.plist") ? "darwin" : (
       fileexists("/etc/os-release") ? "linux" : "windows"
     )
@@ -13,7 +13,12 @@ locals {
       )
     )
   )
-  host_arch = local.host_arch_raw == "arm64" ? "aarch64" : (local.host_arch_raw == "amd64" ? "x86_64" : local.host_arch_raw)
+  host_arch        = local.host_arch_raw == "arm64" ? "aarch64" : (local.host_arch_raw == "amd64" ? "x86_64" : local.host_arch_raw)
+  is_freedos       = var.is_freedos || var.os_name == "freedos"
+  is_msdos         = var.is_msdos || var.os_name == "msdos"
+  is_dos           = local.is_freedos || local.is_msdos
+  dos_serial_port  = local.is_msdos ? var.msdos_serial_port : var.freedos_serial_port
+  dos_monitor_sock = local.is_msdos ? "/tmp/msdos-monitor.sock" : "/tmp/freedos-monitor.sock"
 
   # Source block provider specific
   # hyperv-iso
@@ -58,21 +63,37 @@ locals {
   ) : var.parallels_prlctl
 
   # qemu
-qemu_accelerator = var.qemu_accelerator == null ? (
-    local.host_arch == var.os_arch ? (
-      local.host_os == "darwin" ? "hvf" : (
-        local.host_os == "windows" ? "whpx" : "kvm"
+  qemu_accelerator = var.qemu_accelerator == null ? (
+    local.is_dos ? (
+      var.os_arch == "aarch64" ? "tcg" : (
+        local.host_os == "darwin" ? "hvf" : (
+          local.host_os == "windows" ? "whpx" : (
+            local.host_os == "linux" ? "kvm" : "tcg"
+          )
+        )
       )
-    ) : "tcg"
+      ) : (
+      local.host_arch == var.os_arch ? (
+        local.host_os == "darwin" ? "hvf" : (
+          local.host_os == "windows" ? "whpx" : "kvm"
+        )
+      ) : "tcg"
+    )
   ) : var.qemu_accelerator
-  qemu_binary = var.qemu_binary == null ? "qemu-system-${var.os_arch}" : var.qemu_binary
-qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg" ? "max" : var.qemu_cpu_model
+  qemu_binary = var.qemu_binary == null ? (
+    local.is_dos ? "qemu-system-i386" : "qemu-system-${var.os_arch}"
+  ) : var.qemu_binary
+  qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg" ? (local.is_dos ? "486" : "max") : var.qemu_cpu_model
   qemu_display = var.qemu_display == null ? (
-    var.headless || local.host_os == "linux" ? "none" : (
+    local.is_dos ? (
       local.host_os == "darwin" ? "cocoa" : "none"
+      ) : (
+      var.headless || local.host_os == "linux" ? "none" : (
+        local.host_os == "darwin" ? "cocoa" : "none"
+      )
     )
   ) : var.qemu_display
-  qemu_efi_boot = var.qemu_efi_boot == null ? true : var.qemu_efi_boot
+  qemu_efi_boot = var.qemu_efi_boot == null ? (local.is_dos ? false : true) : var.qemu_efi_boot
   qemu_efi_firmware_code = local.qemu_efi_boot ? (
     var.qemu_efi_firmware_code != null && var.qemu_efi_firmware_code != "" ? var.qemu_efi_firmware_code : (
       var.os_arch == "aarch64" ? (
@@ -99,7 +120,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
             )
           )
         )
-      ) : (
+        ) : (
         fileexists("/usr/share/OVMF/OVMF_CODE.fd") ? "/usr/share/OVMF/OVMF_CODE.fd" : (
           fileexists("/usr/share/OVMF/OVMF_CODE_4M.fd") ? "/usr/share/OVMF/OVMF_CODE_4M.fd" : (
             fileexists("/usr/share/ovmf/OVMF.fd") ? "/usr/share/ovmf/OVMF.fd" : (
@@ -148,7 +169,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
             )
           )
         )
-      ) : (
+        ) : (
         fileexists("/usr/share/OVMF/OVMF_VARS.fd") ? "/usr/share/OVMF/OVMF_VARS.fd" : (
           fileexists("/usr/share/OVMF/OVMF_VARS_4M.fd") ? "/usr/share/OVMF/OVMF_VARS_4M.fd" : (
             fileexists("/usr/share/ovmf/OVMF_VARS.fd") ? "/usr/share/ovmf/OVMF_VARS.fd" : (
@@ -176,8 +197,9 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
     )
   ) : null
   qemu_machine_type = var.qemu_machine_type == null ? (
-    var.os_arch == "aarch64" ? "virt" : "q35"
+    local.is_dos ? "pc" : (var.os_arch == "aarch64" ? "virt" : "q35")
   ) : var.qemu_machine_type
+  qemu_disk_image = var.qemu_disk_image || local.is_msdos
   win11_media_raw = var.win11_media_raw != null && var.win11_media_raw != "" ? var.win11_media_raw : (
     fileexists("${local.build_dir}/iso/win11_media.raw") ? "${local.build_dir}/iso/win11_media.raw" : (
       fileexists("${path.root}/../builds/iso/win11_media.raw") ? "${path.root}/../builds/iso/win11_media.raw" : ""
@@ -194,76 +216,92 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
     ["-device", "usb-storage,bus=usb_xhci.0,drive=oem_iso_d,removable=on"]
   ] : []
   build_complete_dir = var.bento_build_complete_dir != null && var.bento_build_complete_dir != "" ? var.bento_build_complete_dir : "${local.build_dir}/build_complete"
-  build_files_dir = var.bento_build_files_dir != null && var.bento_build_files_dir != "" ? var.bento_build_files_dir : "${local.build_dir}/build_files"
+  build_files_dir    = var.bento_build_files_dir != null && var.bento_build_files_dir != "" ? var.bento_build_files_dir : "${local.build_dir}/build_files"
 
   qemuargs = var.qemuargs == null ? (
-    var.is_windows ? (
-      var.os_arch == "aarch64" && local.win11_media_raw != "" ? [
-        ["-blockdev", "driver=file,node-name=win11media_f,filename=${local.win11_media_raw},read-only=on"],
-        ["-blockdev", "driver=raw,node-name=win11media_d,file=win11media_f,read-only=on"],
-        ["-device", "virtio-blk-pci,drive=win11media_d"],
-        ["-device", "qemu-xhci"],
-        ["-device", "usb-kbd"],
-        ["-device", "usb-tablet"],
-        ["-device", "ramfb"],
-        ["-boot", "strict=off"],
-        ["-serial", "file:${path.root}/../serial.log"],
+    local.is_msdos ? [
+      ["-vga", "std"],
+      ["-rtc", "base=localtime"],
+      ["-serial", "telnet:127.0.0.1:${local.dos_serial_port},server,nowait"],
+      ["-monitor", "unix:${local.dos_monitor_sock},server,nowait"],
+      ["-boot", "order=c"],
       ] : (
-        var.os_arch == "aarch64" ? (
-          local.host_os == "windows" ? [
+      local.is_dos ? [
+        ["-vga", "std"],
+        ["-rtc", "base=localtime"],
+        ["-serial", "telnet:127.0.0.1:${local.dos_serial_port},server,nowait"],
+        ["-monitor", "unix:${local.dos_monitor_sock},server,nowait"],
+        ["-boot", "order=c,once=d"],
+        ] : (
+        var.is_windows ? (
+          var.os_arch == "aarch64" && local.win11_media_raw != "" ? [
+            ["-blockdev", "driver=file,node-name=win11media_f,filename=${local.win11_media_raw},read-only=on"],
+            ["-blockdev", "driver=raw,node-name=win11media_d,file=win11media_f,read-only=on"],
+            ["-device", "virtio-blk-pci,drive=win11media_d"],
             ["-device", "qemu-xhci"],
             ["-device", "usb-kbd"],
             ["-device", "usb-tablet"],
             ["-device", "ramfb"],
             ["-boot", "strict=off"],
             ["-serial", "file:${path.root}/../serial.log"],
-          ] : concat([
-            ["-device", "pcie-root-port,id=pcie.1,chassis=1,slot=1"],
-            ["-device", "nvme,serial=nvme0,drive=drive0,bus=pcie.1"],
-            ["-device", "qemu-xhci,id=usb_xhci"],
-          ], local.qemu_win11_oem_args, [
-            ["-blockdev", "driver=file,node-name=win11_iso_f,filename=${replace(var.iso_url, "file://", "")},read-only=on"],
-            ["-blockdev", "driver=raw,node-name=win11_iso_d,file=win11_iso_f,read-only=on"],
-            ["-device", "usb-storage,bus=usb_xhci.0,drive=win11_iso_d,removable=on,logical_block_size=2048,physical_block_size=2048"],
-            ["-device", "usb-kbd"],
-            ["-device", "usb-tablet"],
-            ["-device", "ramfb"],
-            ["-boot", "strict=off"],
-            ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
-            ["-serial", "chardev:ser0"],
-          ])
-        ) : (
-          local.host_os == "windows" ? [
-            ["-device", "qemu-xhci"],
-            ["-device", "usb-kbd"],
-            ["-device", "usb-tablet"],
-            ["-vga", "std"],
-            ["-boot", "strict=off"],
-            ["-serial", "file:${path.root}/../serial.log"],
-          ] : [
-            ["-device", "qemu-xhci"],
-            ["-device", "usb-kbd"],
-            ["-device", "usb-tablet"],
-            ["-vga", "std"],
-            ["-boot", "strict=off"],
-            ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
-            ["-serial", "chardev:ser0"],
-          ]
-        )
+            ] : (
+            var.os_arch == "aarch64" ? (
+              local.host_os == "windows" ? [
+                ["-device", "qemu-xhci"],
+                ["-device", "usb-kbd"],
+                ["-device", "usb-tablet"],
+                ["-device", "ramfb"],
+                ["-boot", "strict=off"],
+                ["-serial", "file:${path.root}/../serial.log"],
+                ] : concat([
+                  ["-device", "pcie-root-port,id=pcie.1,chassis=1,slot=1"],
+                  ["-device", "nvme,serial=nvme0,drive=drive0,bus=pcie.1"],
+                  ["-device", "qemu-xhci,id=usb_xhci"],
+                  ], local.qemu_win11_oem_args, [
+                  ["-blockdev", "driver=file,node-name=win11_iso_f,filename=${replace(var.iso_url, "file://", "")},read-only=on"],
+                  ["-blockdev", "driver=raw,node-name=win11_iso_d,file=win11_iso_f,read-only=on"],
+                  ["-device", "usb-storage,bus=usb_xhci.0,drive=win11_iso_d,removable=on,logical_block_size=2048,physical_block_size=2048"],
+                  ["-device", "usb-kbd"],
+                  ["-device", "usb-tablet"],
+                  ["-device", "ramfb"],
+                  ["-boot", "strict=off"],
+                  ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
+                  ["-serial", "chardev:ser0"],
+              ])
+              ) : (
+              local.host_os == "windows" ? [
+                ["-device", "qemu-xhci"],
+                ["-device", "usb-kbd"],
+                ["-device", "usb-tablet"],
+                ["-vga", "std"],
+                ["-boot", "strict=off"],
+                ["-serial", "file:${path.root}/../serial.log"],
+                ] : [
+                ["-device", "qemu-xhci"],
+                ["-device", "usb-kbd"],
+                ["-device", "usb-tablet"],
+                ["-vga", "std"],
+                ["-boot", "strict=off"],
+                ["-chardev", "socket,id=ser0,path=/tmp/windows-11-serial.sock,server=on,wait=off"],
+                ["-serial", "chardev:ser0"],
+              ]
+            )
+          )
+          ) : [
+          ["-device", "virtio-gpu-pci"],
+          ["-device", "qemu-xhci"],
+          ["-device", "virtio-tablet"],
+          ["-device", "driver=virtio-keyboard-pci"],
+          ["-device", "driver=virtio-mouse-pci"],
+          ["-device", "driver=usb-kbd"],
+          ["-device", "driver=usb-mouse"],
+          ["-device", "virtio-serial"],
+          ["-chardev", "socket,name=org.qemu.guest_agent.0,id=org.qemu.guest_agent,server=on,wait=off"],
+          ["-device", "virtserialport,chardev=org.qemu.guest_agent,name=org.qemu.guest_agent.0"],
+          ["-boot", "strict=off"],
+        ]
       )
-    ) : [
-      ["-device", "virtio-gpu-pci"],
-      ["-device", "qemu-xhci"],
-      ["-device", "virtio-tablet"],
-      ["-device", "driver=virtio-keyboard-pci"],
-      ["-device", "driver=virtio-mouse-pci"],
-      ["-device", "driver=usb-kbd"],
-      ["-device", "driver=usb-mouse"],
-      ["-device", "virtio-serial"],
-      ["-chardev", "socket,name=org.qemu.guest_agent.0,id=org.qemu.guest_agent,server=on,wait=off"],
-      ["-device", "virtserialport,chardev=org.qemu.guest_agent,name=org.qemu.guest_agent.0"],
-      ["-boot", "strict=off"],
-    ]
+    )
   ) : var.qemuargs
 
   # utm-iso
@@ -271,10 +309,12 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
     local.utm_disable_vnc ? null : local.default_boot_command
   ) : var.utm_boot_command
   utm_display_hardware_type = var.utm_display_hardware_type == null ? (
-    var.os_arch == "aarch64" ? (
-      var.is_windows ? "virtio-ramfb-gl" : "virtio-gpu-pci"
-      ) : (
-      var.is_windows ? "virtio-vga-gl" : "virtio-vga"
+    local.is_dos ? "vga" : (
+      var.os_arch == "aarch64" ? (
+        var.is_windows ? "virtio-ramfb-gl" : "virtio-gpu-pci"
+        ) : (
+        var.is_windows ? "virtio-vga-gl" : "virtio-vga"
+      )
     )
   ) : var.utm_display_hardware_type
   utm_disable_vnc = var.utm_disable_vnc == null ? (
@@ -288,9 +328,14 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
   ) : var.utm_guest_additions_url
   utm_guest_additions_sha256      = var.utm_guest_additions_sha256 == null ? "none" : var.utm_guest_additions_sha256
   utm_guest_additions_target_path = var.utm_guest_additions_target_path == null && local.utm_guest_additions_url != null ? "${path.root}/../builds/iso/${split(".", basename(local.utm_guest_additions_url))[0]}-${substr(sha256(local.utm_guest_additions_url), 0, 8)}.iso" : var.utm_guest_additions_target_path
+  utm_vm_arch = var.utm_vm_arch == null ? (
+    local.is_dos ? "x86_64" : var.os_arch
+  ) : var.utm_vm_arch
+  utm_version_file        = local.communicator == "none" ? "" : null
+  virtualbox_version_file = local.communicator == "none" ? "" : var.virtualbox_version_file
 
   # virtualbox-iso
-  vbox_chipset = var.vbox_chipset == null ? "ich9" : var.vbox_chipset
+  vbox_chipset = var.vbox_chipset == null ? (local.is_dos ? "piix3" : "ich9") : var.vbox_chipset
   vbox_gfx_controller = var.vbox_gfx_controller == null ? (
     var.is_windows ? "vboxsvga" : "vboxsvga"
   ) : var.vbox_gfx_controller
@@ -298,57 +343,63 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
     var.is_windows ? 128 : 33
   ) : var.vbox_gfx_vram_size
   vbox_guest_additions_mode = var.vbox_guest_additions_mode == null ? (
-    var.is_windows ? "attach" : "upload"
+    local.is_dos ? "disable" : (var.is_windows ? "attach" : "upload")
   ) : var.vbox_guest_additions_mode
   vbox_hard_drive_interface = var.vbox_hard_drive_interface == null ? (
-    var.is_windows || var.os_name == "solaris" || var.os_name == "omnios" ? "sata" : "virtio"
+    local.is_dos ? "ide" : (var.is_windows || var.os_name == "solaris" || var.os_name == "omnios" ? "sata" : "virtio")
   ) : var.vbox_hard_drive_interface
   vbox_iso_interface = var.vbox_iso_interface == null ? (
-    var.is_windows || var.os_name == "solaris" || var.os_name == "omnios" ? "sata" : "virtio"
+    local.is_dos ? "ide" : (var.is_windows || var.os_name == "solaris" || var.os_name == "omnios" ? "sata" : "virtio")
   ) : var.vbox_iso_interface
   vboxmanage = var.vboxmanage == null ? (
-    var.is_windows ? (
-      var.os_arch == "aarch64" ? [
-        ["modifyvm", "{{.Name}}", "--chipset", "armv8virtual"],
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["modifyvm", "{{.Name}}", "--nic-type1", "usbnet"],
-        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
-        ] : [
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["modifyvm", "{{.Name}}", "--uart1", "0x3f8", "4"],
-        ["modifyvm", "{{.Name}}", "--uartmode1", local.host_os == "windows" ? "file" : "server", local.host_os == "windows" ? "${path.root}/../serial.log" : "/tmp/windows-11-serial.sock"],
-        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
-      ]
-      ) : (
-      var.os_arch == "aarch64" ? [
-        ["modifyvm", "{{.Name}}", "--chipset", "armv8virtual"],
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--graphicscontroller", "qemuramfb"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
-        ] : [
-        ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
-        ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
-        ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
-        ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
-        ["modifyvm", "{{.Name}}", "--mouse", "usb"],
-        ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
-        ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
-      ]
+    local.is_dos ? [
+      ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
+      ["modifyvm", "{{.Name}}", "--uart1", "0x3f8", "4"],
+      ["modifyvm", "{{.Name}}", "--uartmode1", "tcpserver", "${local.dos_serial_port}"],
+      ] : (
+      var.is_windows ? (
+        var.os_arch == "aarch64" ? [
+          ["modifyvm", "{{.Name}}", "--chipset", "armv8virtual"],
+          ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
+          ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
+          ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
+          ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
+          ["modifyvm", "{{.Name}}", "--mouse", "usb"],
+          ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
+          ["modifyvm", "{{.Name}}", "--nic-type1", "usbnet"],
+          ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
+          ] : [
+          ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
+          ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
+          ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
+          ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
+          ["modifyvm", "{{.Name}}", "--mouse", "usb"],
+          ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
+          ["modifyvm", "{{.Name}}", "--uart1", "0x3f8", "4"],
+          ["modifyvm", "{{.Name}}", "--uartmode1", local.host_os == "windows" ? "file" : "server", local.host_os == "windows" ? "${path.root}/../serial.log" : "/tmp/windows-11-serial.sock"],
+          ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
+        ]
+        ) : (
+        var.os_arch == "aarch64" ? [
+          ["modifyvm", "{{.Name}}", "--chipset", "armv8virtual"],
+          ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
+          ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
+          ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
+          ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
+          ["modifyvm", "{{.Name}}", "--graphicscontroller", "qemuramfb"],
+          ["modifyvm", "{{.Name}}", "--mouse", "usb"],
+          ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
+          ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
+          ] : [
+          ["modifyvm", "{{.Name}}", "--audio-enabled", "off"],
+          ["modifyvm", "{{.Name}}", "--nat-localhostreachable1", "on"],
+          ["modifyvm", "{{.Name}}", "--cableconnected1", "on"],
+          ["modifyvm", "{{.Name}}", "--usb-xhci", "on"],
+          ["modifyvm", "{{.Name}}", "--mouse", "usb"],
+          ["modifyvm", "{{.Name}}", "--keyboard", "usb"],
+          ["storagectl", "{{.Name}}", "--name", "IDE", "--remove"],
+        ]
+      )
     )
   ) : var.vboxmanage
   vbox_nic_type = var.vbox_nic_type == null ? (
@@ -383,7 +434,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
           var.is_windows ? (
             var.os_arch == "aarch64" ? (
               fileexists("/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso") ? "/Applications/VMware Fusion.app/Contents/Library/isoimages/arm64/windows.iso" : null
-            ) : (
+              ) : (
               fileexists("/Applications/VMware Fusion.app/Contents/Library/isoimages/x86_x64/windows.iso") ? "/Applications/VMware Fusion.app/Contents/Library/isoimages/x86_x64/windows.iso" : null
             )
           ) : null
@@ -440,7 +491,7 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
         "SetupComplete.cmd" = file(
           var.os_arch == "x86_64" ? "${path.root}/win_answer_files/${var.os_version}/SetupComplete.cmd" : "${path.root}/win_answer_files/${var.os_version}/arm64/SetupComplete.cmd"
         )
-      } : {
+        } : {
         "Autounattend.xml" = templatefile(
           var.os_arch == "x86_64" ? (
             var.hyperv_generation == 2 ? "win_answer_files/${var.os_version}/hyperv-gen2/Autounattend.xml" : "win_answer_files/${var.os_version}/Autounattend.xml"
@@ -451,26 +502,28 @@ qemu_cpu_model = var.qemu_cpu_model == "host" && local.qemu_accelerator == "tcg"
     ) : null
   ) : var.cd_content
   communicator = var.communicator == null ? (
-    var.is_windows ? "winrm" : "ssh"
+    local.is_dos ? "none" : (var.is_windows ? "winrm" : "ssh")
   ) : var.communicator
   default_boot_command = var.boot_command
   default_boot_wait = var.default_boot_wait == null ? (
     var.is_windows ? "60s" : "10s"
   ) : var.default_boot_wait
   disk_size = var.disk_size == null ? (
-    var.is_windows ? 131072 : 65536
+    local.is_dos ? 512 : (var.is_windows ? 131072 : 65536)
   ) : var.disk_size
   http_directory  = var.http_directory == null ? "${path.root}/http" : var.http_directory
   iso_target_path = var.iso_target_path == "build_dir_iso" && var.iso_url != null ? "${path.root}/../builds/iso/${var.os_name}-${var.os_version}-${var.os_arch}-${substr(sha256(var.iso_url), 0, 8)}.iso" : var.iso_target_path
   memory = var.memory == null ? (
-    var.is_windows || var.os_name == "macos" || var.os_arch == "aarch64" ? 4096 : 3072
+    local.is_dos ? 64 : (var.is_windows || var.os_name == "macos" || var.os_arch == "aarch64" ? 4096 : 3072)
   ) : var.memory
   output_directory = var.output_directory == null ? "${local.build_files_dir}/packer-${var.os_name}-${var.os_version}-${var.os_arch}" : var.output_directory
   shutdown_command = var.shutdown_command == null ? (
-    var.is_windows ? "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"" : (
-      var.os_name == "macos" ? "echo 'vagrant' | sudo -S shutdown -h now" : (
-        var.os_name == "alpine" ? "echo 'vagrant' | sudo -S /sbin/poweroff" : (
-        var.os_name == "freebsd" ? "echo 'vagrant' | su -m root -c 'shutdown -p now'" : "echo 'vagrant' | sudo -S /sbin/halt -h -p"
+    local.is_dos ? null : (
+      var.is_windows ? "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"" : (
+        var.os_name == "macos" ? "echo 'vagrant' | sudo -S shutdown -h now" : (
+          var.os_name == "alpine" ? "echo 'vagrant' | sudo -S /sbin/poweroff" : (
+            var.os_name == "freebsd" ? "echo 'vagrant' | su -m root -c 'shutdown -p now'" : "echo 'vagrant' | sudo -S /sbin/halt -h -p"
+          )
         )
       )
     )
@@ -598,7 +651,7 @@ source "qemu" "vm" {
   disk_compression    = var.qemu_disk_compression
   disk_detect_zeroes  = var.qemu_disk_detect_zeroes
   disk_discard        = var.qemu_disk_discard
-  disk_image          = var.qemu_disk_image
+  disk_image          = local.qemu_disk_image
   disk_interface      = var.qemu_disk_interface
   efi_boot            = local.qemu_efi_boot
   efi_firmware_code   = local.qemu_efi_firmware_code
@@ -665,7 +718,8 @@ source "utm-iso" "vm" {
   hypervisor                  = var.utm_hypervisor
   iso_interface               = var.utm_iso_interface
   uefi_boot                   = var.utm_uefi_boot
-  vm_arch                     = var.os_arch
+  utm_version_file            = local.utm_version_file
+  vm_arch                     = local.utm_vm_arch
   vm_backend                  = var.utm_vm_backend
   vm_icon                     = var.utm_vm_icon
   # Source block common options
@@ -718,7 +772,7 @@ source "virtualbox-iso" "vm" {
   rtc_time_base             = var.vbox_rtc_time_base
   usb                       = var.vbox_usb
   vboxmanage                = local.vboxmanage
-  virtualbox_version_file   = var.virtualbox_version_file
+  virtualbox_version_file   = local.virtualbox_version_file
   # Source block common options
   boot_command            = var.vbox_boot_command == null ? local.default_boot_command : var.vbox_boot_command
   boot_wait               = var.vbox_boot_wait == null ? local.default_boot_wait : var.vbox_boot_wait
@@ -758,7 +812,7 @@ source "virtualbox-ovf" "vm" {
   source_path             = var.vbox_source_path
   checksum                = var.vbox_checksum
   vboxmanage              = local.vboxmanage
-  virtualbox_version_file = var.virtualbox_version_file
+  virtualbox_version_file = local.virtualbox_version_file
   # Source block common options
   communicator            = local.communicator
   headless                = var.headless

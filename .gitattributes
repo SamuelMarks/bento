@@ -2,36 +2,82 @@
 * text=auto eol=lf
 
 # Force LF line endings on these files
-*.erb eol=lf
-*.gemspec eol=lf
-*.hcl eol=lf
-*.json eol=lf
-*.md eol=lf
-*.ps1 eol=lf
-*.py eol=lf
-*.rb eol=lf
-*.sh eol=lf
-*.template eol=lf
-*.yaml eol=lf
-*.yml eol=lf
-ks.cfg eol=lf
-preseed.cfg eol=lf
+*.erb text eol=lf
+*.gemspec text eol=lf
+*.hcl text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
+*.py text eol=lf
+*.rb text eol=lf
+*.sh text eol=lf
+*.template text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+ks.cfg text eol=lf
+8ks.cfg text eol=lf
+preseed.cfg text eol=lf
 
-# Force CRLF line endings on Windows command, batch scripts, and answer files
-*.bat eol=crlf
-*.cmd eol=crlf
-Autounattend.xml eol=crlf
+# Force CRLF line endings on DOS and Windows command, batch, assembly, and answer files
+*.bat text eol=crlf
+*.BAT text eol=crlf
+*.cmd text eol=crlf
+*.CMD text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+*.sys text eol=crlf
+*.SYS text eol=crlf
+*.asm text eol=crlf
+*.ASM text eol=crlf
+*.inc text eol=crlf
+*.INC text eol=crlf
+*.mak text eol=crlf
+*.MAK text eol=crlf
+*.ini text eol=crlf
+*.INI text eol=crlf
+*.reg text eol=crlf
+*.vbs text eol=crlf
+Autounattend.xml text eol=crlf
+lib/bento/test_templates/freedos_openwatcom/*.C text eol=crlf
+lib/bento/test_templates/msdos_build/*.ASM text eol=crlf
 
-# Force binary on these files
+# Force binary on certificates, DOS/Windows executables, archives, and disk images
 *.box binary
 *.cer binary
+*.com binary
+*.COM binary
+*.exe binary
+*.EXE binary
+*.dll binary
+*.DLL binary
+*.obj binary
+*.OBJ binary
+*.lib binary
+*.LIB binary
+*.bin binary
+*.BIN binary
 *.gif binary
 *.gz binary
 *.ico binary
+*.img binary
+*.IMG binary
+*.ima binary
+*.IMA binary
 *.inf binary
 *.iso binary
+*.ISO binary
 *.jpeg binary
 *.jpg binary
 *.png binary
+*.qcow2 binary
+*.raw binary
 *.tar binary
+*.vdi binary
+*.vfd binary
+*.VFD binary
+*.flp binary
+*.FLP binary
+*.vhd binary
+*.vhdx binary
+*.vmdk binary
 *.zip binary

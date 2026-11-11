@@ -248,6 +248,12 @@ RSpec.describe ProviderMetadata do
       allow(Mixlib::ShellOut).to receive(:new).with('libvirtd -V').and_return(sout)
       expect(provider_meta.ver_libvirt).to eq('9.0.0')
     end
+
+    it 'falls back to ver_qemu when libvirtd is not installed' do
+      allow(Mixlib::ShellOut).to receive(:new).with('libvirtd -V').and_raise(Errno::ENOENT)
+      allow(provider_meta).to receive(:ver_qemu).and_return('9.1.0')
+      expect(provider_meta.ver_libvirt).to eq('9.1.0')
+    end
   end
 
   describe '#ver_qemu' do
