@@ -332,6 +332,12 @@ inject_msdos_into_image() {
         for _com in SERINIT.COM SHUTDOWN.COM B64DEC.COM B64ENC.COM SERGET.COM; do
           cp -f "${SCRIPT_DIR}/packer_templates/scripts/msdos/${_com}" "${_mnt}/${_com}"
         done
+        for _d32 in "${SCRIPT_DIR}/../open-watcom-v2/bld/dos32a/dos386/dos32a.exe" "${SCRIPT_DIR}/../open-watcom-v2/bld/redist/dos32a/dos32a.exe" "${WATCOM:-}/binw/dos32a.exe"; do
+          if [ -f "$_d32" ]; then
+            cp -f "$_d32" "${_mnt}/DOS32A.EXE"
+            break
+          fi
+        done
         write_version_config_and_autoexec "$_mnt" "1.25"
       else
         mkdir -p "${_mnt}/DOS" "${_mnt}/BENTO" "${_mnt}/TEMP"
@@ -365,6 +371,13 @@ inject_msdos_into_image() {
         for _com in SERINIT.COM SHUTDOWN.COM B64DEC.COM B64ENC.COM SERGET.COM; do
           cp -f "${SCRIPT_DIR}/packer_templates/scripts/msdos/${_com}" "${_mnt}/BENTO/${_com}"
           cp -f "${SCRIPT_DIR}/packer_templates/scripts/msdos/${_com}" "${_mnt}/${_com}"
+        done
+        for _d32 in "${SCRIPT_DIR}/../open-watcom-v2/bld/dos32a/dos386/dos32a.exe" "${SCRIPT_DIR}/../open-watcom-v2/bld/redist/dos32a/dos32a.exe" "${WATCOM:-}/binw/dos32a.exe"; do
+          if [ -f "$_d32" ]; then
+            cp -f "$_d32" "${_mnt}/BENTO/DOS32A.EXE"
+            cp -f "$_d32" "${_mnt}/DOS32A.EXE"
+            break
+          fi
         done
       fi
 

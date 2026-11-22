@@ -189,6 +189,17 @@ RSpec.describe Bento::VagrantMsdos::Communicator do
       exact_aligned = aligned_hdr + aligned_body
       expect(communicator.align_mz_header_for_dos125(exact_aligned).bytesize).to eq(1024)
 
+      # Extended MZ+LE executable (e.g. DOS/32A 32-bit LE): preserves trailing LE payload intact
+      le_mz_hdr = 'MZ'.b + [64, 1, 0, 32, 0, 0xFFFF, 0, 0x800, 0, 0, 0, 0x40].pack('v12')
+      le_mz_hdr += ("\x00".b * (0x3c - le_mz_hdr.bytesize)) + [512].pack('V') + ("\x00".b * (512 - 0x40))
+      le_exe = le_mz_hdr + 'LE_32BIT_PROTECTED_MODE_PAYLOAD'.b
+      expect(communicator.align_mz_header_for_dos125(le_exe)).to eq(le_exe)
+
+      # MZ with e_lfarlc >= 0x40 but e_lfanew == 0 (pure 16-bit fullheader MZ such as DOS32A.EXE itself)
+      fullhdr_16 = 'MZ'.b + [80, 1, 0, 4, 0, 0xFFFF, 0, 0x800, 0, 0, 0, 0x40].pack('v12')
+      fullhdr_16 += ("\x00".b * (64 - fullhdr_16.bytesize)) + code_body + 'EXTRA_DEBUG'.b
+      expect(communicator.align_mz_header_for_dos125(fullhdr_16)[8, 2].unpack1('v')).to eq(32)
+
       # Edge case: e_cp == 0 and old_hdr_bytes > bin.bytesize
       malformed_mz = 'MZ'.b + [0, 0, 0, 10].pack('v4') + ("\x00".b * 20)
       expect(communicator.align_mz_header_for_dos125(malformed_mz)).to eq(malformed_mz)

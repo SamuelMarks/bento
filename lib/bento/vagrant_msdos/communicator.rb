@@ -242,6 +242,12 @@ module Bento
         return bin unless msdos_config.dos_version.to_s == '1.25'
         return bin unless bin.bytesize >= 28 && bin.start_with?('MZ'.b)
 
+        if bin.bytesize >= 0x40 &&
+           bin[0x18, 2].unpack1('v') >= 0x40 &&
+           bin[0x3c, 4].unpack1('V').between?(1, bin.bytesize - 1)
+          return bin
+        end
+
         e_cblp    = bin[2, 2].unpack1('v')
         e_cp      = bin[4, 2].unpack1('v')
         e_cparhdr = bin[8, 2].unpack1('v')

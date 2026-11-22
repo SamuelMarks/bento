@@ -41,7 +41,9 @@ stage_watcom_tree() {
     if [ -f "${WATCOM}/binw/dos4gw.exe" ]; then
       cp -f "${WATCOM}/binw/dos4gw.exe" "${_target}/BENTO/DOS4GW.EXE"
     fi
-    if [ -f "${WATCOM}/binw/dos32a.exe" ]; then
+    if [ -f "$(dirname "$0")/../../../../open-watcom-v2/bld/redist/dos32a/dos32a.exe" ]; then
+      cp -f "$(dirname "$0")/../../../../open-watcom-v2/bld/redist/dos32a/dos32a.exe" "${_target}/BENTO/DOS32A.EXE"
+    elif [ -f "${WATCOM}/binw/dos32a.exe" ]; then
       cp -f "${WATCOM}/binw/dos32a.exe" "${_target}/BENTO/DOS32A.EXE"
     fi
   else
